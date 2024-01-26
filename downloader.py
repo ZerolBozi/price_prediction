@@ -67,7 +67,6 @@ def downloader(
 
     return ret_data
 
-# 台股1m的資料未完成, 需要API Key, 這部分還未實現
 def download(market_tpye: str, ticker: str, interval: str, start: datetime, end: datetime, crypto_api_path: str = None, sj_api_path: str = None):
     """
     :param market_tpye: 市場類型, (tw, us, crypto)

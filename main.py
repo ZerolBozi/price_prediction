@@ -22,9 +22,7 @@ if __name__ == "__main__":
     #     save=True,
     #     output_path=output_path
     # )
-
-    interval = '4h'
-    ticker = f"binance_sol_kline_{interval}__spot_"
+    ticker = "binance_sol_kline_4h_spot"
 
     data = pd.read_csv(f'./datas/{ticker}.csv')
     

@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from processer import create_indicators, scale_datasets, inverse_scale_datasets, convert_to_lstm_format
 from models import Model
 
+def use_model():
+    pass
+
 if __name__ == "__main__":
     ticker = 'binance_matic_kline_1h__spot_'
     data = pd.read_csv(f'./datas/{ticker}.csv')

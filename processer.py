@@ -120,12 +120,15 @@ def split_datasets(data: np.ndarray, train_test_split_ratio: float):
     test_data = data[train_size:]
     return train_data, test_data
 
-def convert_to_lstm_format(data: np.ndarray, time_window_size: int, y_idx_list: list, shuffle: bool=True, batch_size=None):
+def convert_to_lstm_format(data: np.ndarray, time_window_size: int, future_window_size: int, y_idx_list: list, shuffle: bool=True, batch_size=None):
     """
     把np資料轉成LSTM格式
 
     :param data: NumPy array containing the time-series data.
     :param time_window_size: Size of the time window used for creating the sequences.
+    :param future_window_size: Size of the future window used for creating the sequences.
+    :param y_idx_list: List of indices of the columns to be used as targets.
+    :param shuffle: Whether to shuffle the data.
     :param batch_size: Batch size to be used if a DataLoader is required.
     :return: A DataLoader if batch_size is specified, else a tuple of torch.Tensor (features, targets).
     """

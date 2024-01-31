@@ -20,6 +20,7 @@ class Train:
         test_y_data: tuple,
         epoches: int,
         original_data: dict,
+        model_params: dict,
         should_save_model: bool=False,
         model_path: str=None,
         learning_rate: float=0.00001,
@@ -39,6 +40,9 @@ class Train:
         if not all(key in original_data.keys() for key in ['datas', 'scalers', 'real', 'predict', 'plot']):
             raise Exception("original_data should have keys: datas, scalers, real, predict, plot")
         
+        if not all(key in model_params.keys() for key in ['input_size', 'output_size']):
+            raise Exception("model_params should have keys: input_size, output_size")
+        
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.ticker = ticker
@@ -47,17 +51,26 @@ class Train:
         self.test_y_data = test_y_data
         self.epoches = epoches
         self.original_data = original_data
+        self.model_params = model_params
         self.model_name = model_name.upper()
 
         self.should_save_model = should_save_model
         self.model_path = model_path
 
-        input_size = next(iter(self.train_loader))[0].size(2)
+        # input_size = next(iter(self.train_loader))[0].size(2)
 
         # output_size從original_data裡面的predict欄位數量來決定
         model_dict = {
-            'LSTM': LSTM(input_size=input_size, output_size=len(self.original_data.get('predict'))),
-            'GRU': GRU(input_size=input_size, output_size=len(self.original_data.get('predict')))
+            'LSTM': LSTM(
+                input_size=self.model_params.get('input_size'), 
+                output_size=self.model_params.get('output_size'),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            ),
+            'GRU': GRU(input_size=self.model_params.get('input_size'), output_size=self.model_params.get('output_size'))
         }
 
         self.model = model_dict.get(self.model_name)

@@ -54,19 +54,31 @@ if __name__ == "__main__":
     
     train_np, test_np = split_datasets(data_scaled_np, 0.6)
 
-    time_window_size = 1
+    time_window_size = 10
+    feture_window_size = 1
     batch_size = 32
     epoches = 750
 
-    original_data = dict()
-    original_data['datas'] = test_np[time_window_size:]
-    original_data['scalers'] = scalers
-    original_data['real'] = ['close']
-    original_data['predict'] = targets
-    original_data['plot'] = targets
+    original_data = {
+        'datas': test_np[time_window_size:],
+        'scalers': scalers,
+        'real': ['close'],
+        'predict': targets,
+        'plot': targets
+    }
 
-    train_data_loader = convert_to_lstm_format(train_np, time_window_size, y_idx_list, batch_size=batch_size)
-    test_x_data, test_y_data = convert_to_lstm_format(test_np, time_window_size, y_idx_list)
+    model_params = {
+        'input_size': len(data_processed.columns),
+        'output_size': len(targets),
+        'hidden_size': 128,
+        'fc_size': 128,
+        'num_layers': 2,
+        'dropout_prob': 0.10,
+        'batch_first': True
+    }
+
+    train_data_loader = convert_to_lstm_format(train_np, time_window_size, feture_window_size, y_idx_list, batch_size=batch_size)
+    test_x_data, test_y_data = convert_to_lstm_format(test_np, time_window_size, feture_window_size, y_idx_list)
 
     train_obj = Train(
         ticker=ticker,
@@ -75,6 +87,7 @@ if __name__ == "__main__":
         test_y_data=test_y_data,
         epoches=epoches,
         original_data=original_data,
+        model_params=model_params,
         should_save_model=True,
         model_path=f"./models/lstm_{ticker}"
     )

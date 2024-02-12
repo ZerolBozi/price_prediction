@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #     output_path=output_path
     # )
     checkpoint_name = f"checkpoint3"
-    ticker = "MSFT"
+    ticker = "2330"
 
     data = pd.read_csv(f'./datas/{ticker}.csv')
     

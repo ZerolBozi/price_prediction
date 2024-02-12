@@ -22,7 +22,7 @@ if __name__ == "__main__":
     #     save=True,
     #     output_path=output_path
     # )
-    ticker = "binance_sol_kline_4h_spot"
+    ticker = "binance_btc_kline_4h_spot"
 
     data = pd.read_csv(f'./datas/{ticker}.csv')
     
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     
     train_np, test_np = split_datasets(data_scaled_np, 0.6)
 
-    time_window_size = 10
+    time_window_size = 1
     batch_size = 32
     epoches = 750
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         epoches=epoches,
         original_data=original_data,
         model_params=model_params,
-        should_save_model=True,
+        should_save_model=False,
         model_path=f"./models/lstm_{ticker}"
     )
 

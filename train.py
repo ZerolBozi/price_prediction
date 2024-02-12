@@ -123,11 +123,10 @@ class Train:
             # check early stoppping
             if self.epochs_no_improve >= self.patience:
                 print("Early stopping triggered")
-                self.save_model(epoch, val_loss)
                 break
 
         self.show_evaluate()
-        self.save_model()
+        self.save_model(epoch, val_loss)
 
     def verify(self):
         self.model.eval()

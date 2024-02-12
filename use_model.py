@@ -47,7 +47,7 @@ def plot_results(ticker: str, real_data: pd.DataFrame, predicted_data: pd.DataFr
     plt.show()
 
 if __name__ == "__main__":
-    ticker = '2330'
+    ticker = 'binance_sol_kline_1h_spot'
     data = pd.read_csv(f'./datas/{ticker}.csv')
 
     use_model(ticker, data, f'lstm_stock_crypto')

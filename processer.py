@@ -120,7 +120,7 @@ def split_datasets(data: np.ndarray, train_test_split_ratio: float):
     test_data = data[train_size:]
     return train_data, test_data
 
-def convert_to_lstm_format(data: np.ndarray, time_window_size: int, future_window_size: int, y_idx_list: list, shuffle: bool=True, batch_size=None):
+def convert_to_lstm_format(data: np.ndarray, time_window_size: int, y_idx_list: list, shuffle: bool=True, batch_size=None):
     """
     把np資料轉成LSTM格式
 

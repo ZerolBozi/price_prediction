@@ -55,7 +55,6 @@ if __name__ == "__main__":
     train_np, test_np = split_datasets(data_scaled_np, 0.6)
 
     time_window_size = 10
-    feture_window_size = 1
     batch_size = 32
     epoches = 750
 
@@ -77,8 +76,8 @@ if __name__ == "__main__":
         'batch_first': True
     }
 
-    train_data_loader = convert_to_lstm_format(train_np, time_window_size, feture_window_size, y_idx_list, batch_size=batch_size)
-    test_x_data, test_y_data = convert_to_lstm_format(test_np, time_window_size, feture_window_size, y_idx_list)
+    train_data_loader = convert_to_lstm_format(train_np, time_window_size, y_idx_list, batch_size=batch_size)
+    test_x_data, test_y_data = convert_to_lstm_format(test_np, time_window_size, y_idx_list)
 
     train_obj = Train(
         ticker=ticker,

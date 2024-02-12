@@ -7,6 +7,9 @@ from torch.utils.data import TensorDataset, DataLoader
 
 from Indicators import Indicators
 
+# 前77是0 這個有點奇怪, 暫時先這樣
+MINIMUM_DATA_SIZE = 77
+
 def create_indicators(data:pd.DataFrame, save: bool = False, output_path: str = None, data_type: str = 'csv'):
     ret_data = data.copy()
 
@@ -41,7 +44,7 @@ def create_indicators(data:pd.DataFrame, save: bool = False, output_path: str = 
             ret_data[col] = ret_values[idx]
 
     # 把有0的橫排移除
-    ret_data = ret_data[77:]
+    ret_data = ret_data[MINIMUM_DATA_SIZE:]
 
     if (save) and (output_path is not None):
         output_data(ret_data, data_type, output_path)

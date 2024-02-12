@@ -79,7 +79,15 @@ class Train:
                 dropout_prob=self.model_params.get('dropout_prob', 0.10),
                 batch_first=self.model_params.get('batch_first', True)
             ),
-            'GRU': GRU(input_size=self.model_params.get('input_size'), output_size=self.model_params.get('output_size'))
+            'GRU': GRU(
+                input_size=self.model_params.get('input_size'), 
+                output_size=self.model_params.get('output_size'),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            )
         }
 
         self.model = model_dict.get(self.model_type, "LSTM")

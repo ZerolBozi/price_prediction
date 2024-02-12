@@ -139,7 +139,7 @@ class Train:
             self.predict_result = output
 
             if (epoch + 1) % 10 == 0:
-                print(f"Epoch [{epoch+1}/{self.epoches}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+                print(f"Epoch [{epoch+1}/{self.epoches}], Train Loss: {train_loss:.7f}, Val Loss: {val_loss:.7f}")
 
             if val_loss < self.best_val_loss - self.min_delta:
                 self.best_val_loss = val_loss

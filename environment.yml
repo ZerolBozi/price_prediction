@@ -1,4 +1,4 @@
-name: test
+name: price_prediction
 channels:
   - pytorch
   - nvidia

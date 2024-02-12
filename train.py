@@ -123,7 +123,7 @@ class Train:
             # check early stoppping
             if self.epochs_no_improve >= self.patience:
                 print("Early stopping triggered")
-                self.save_model()
+                self.save_model(epoch, val_loss)
                 break
 
         self.show_evaluate()
@@ -180,9 +180,14 @@ class Train:
         plt.legend()
         plt.show()
 
-    def save_model(self):
-        if (self.should_save_model) and (self.model_path is not None):
+    def save_model(self, epoch: int, val_loss:float):
+        if self.model_path is None:
+            return
+        
+        if (self.should_save_model):
             torch.save(self.model, self.model_path + '.pt')
+        else:
+            self.save_checkpoint(epoch, val_loss)
 
     def save_checkpoint(self, epoch: int, val_loss:float):
         checkpoint = {

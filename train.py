@@ -1,3 +1,5 @@
+import os
+
 import torch
 import numpy as np
 import pandas as pd
@@ -22,11 +24,15 @@ class Train:
         original_data: dict,
         model_params: dict,
         should_save_model: bool=False,
-        model_path: str=None,
+        model_path: str="./models",
+        checkpoint_path: str="./checkpoints",
+        model_name: str=None,
+        checkpoint_name: str=None,
         learning_rate: float=0.00001,
-        model_name: str='LSTM',
+        model_type: str='LSTM',
+        use_early_stopping: bool=True,
         patience=250, 
-        min_delta=0.001
+        min_delta=0.001,
     ):
         """
         :original_data
@@ -52,10 +58,13 @@ class Train:
         self.epoches = epoches
         self.original_data = original_data
         self.model_params = model_params
-        self.model_name = model_name.upper()
+        self.model_type = model_type.upper()
 
         self.should_save_model = should_save_model
         self.model_path = model_path
+        self.checkpoint_path = checkpoint_path
+        self.model_name = model_name
+        self.checkpoint_name = checkpoint_name
 
         # input_size = next(iter(self.train_loader))[0].size(2)
 
@@ -73,7 +82,7 @@ class Train:
             'GRU': GRU(input_size=self.model_params.get('input_size'), output_size=self.model_params.get('output_size'))
         }
 
-        self.model = model_dict.get(self.model_name)
+        self.model = model_dict.get(self.model_type, "LSTM")
         self.model.to(self.device)
 
         self.criterion = nn.MSELoss().to(self.device)
@@ -84,10 +93,28 @@ class Train:
         self.predict_result = None
 
         # early stopping init
+        self.use_early_stopping = use_early_stopping
         self.patience = patience
         self.min_delta = min_delta
         self.best_val_loss = float('inf')
         self.epochs_no_improve = 0
+
+        self.load_checkpoint()
+
+    def load_checkpoint(self):
+        if (self.checkpoint_path is None) or (self.checkpoint_name is None):
+            return
+        
+        if not os.path.exists(f"{self.checkpoint_path}/{self.checkpoint_name}.pth"):
+            return
+        
+        checkpoint = torch.load(f"{self.checkpoint_path}/{self.checkpoint_name}.pth")
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.best_val_loss = checkpoint['val_loss']
+        # self.epochs_no_improve = checkpoint['epoch']
+
+        print('load checkpoint successed!')
 
     def run(self):
         for epoch in range(self.epoches):
@@ -121,7 +148,7 @@ class Train:
                 self.epochs_no_improve += 1
             
             # check early stoppping
-            if self.epochs_no_improve >= self.patience:
+            if (self.use_early_stopping) and (self.epochs_no_improve >= self.patience):
                 print("Early stopping triggered")
                 break
 
@@ -180,11 +207,11 @@ class Train:
         plt.show()
 
     def save_model(self, epoch: int, val_loss:float):
-        if self.model_path is None:
+        if (self.model_path is None) or (self.model_name is None):
             return
         
         if (self.should_save_model):
-            torch.save(self.model, self.model_path + '.pt')
+            torch.save(self.model, f'{self.model_path}/{self.model_name}.pt')
         else:
             self.save_checkpoint(epoch, val_loss)
 
@@ -195,4 +222,4 @@ class Train:
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict()
         }
-        torch.save(checkpoint, f'{self.model_path}_checkpoint_epoch_{epoch}.pth')
+        torch.save(checkpoint, f'{self.checkpoint_path}/{self.checkpoint_name}_epoch_{epoch}.pth')

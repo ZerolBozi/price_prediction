@@ -22,6 +22,7 @@ if __name__ == "__main__":
     #     save=True,
     #     output_path=output_path
     # )
+    checkpoint_name = f"checkpoint2"
     ticker = "binance_btc_kline_4h_spot"
 
     data = pd.read_csv(f'./datas/{ticker}.csv')
@@ -87,8 +88,10 @@ if __name__ == "__main__":
         epoches=epoches,
         original_data=original_data,
         model_params=model_params,
-        should_save_model=False,
-        model_path=f"./models/lstm_{ticker}"
+        should_save_model=True,
+        model_name=f"lstm_{ticker}",
+        checkpoint_name=checkpoint_name,
+        use_early_stopping=True
     )
 
     train_obj.run()

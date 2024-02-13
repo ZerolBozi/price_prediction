@@ -10,9 +10,14 @@ from train import Train
 def get_parser():
     parser = argparse.ArgumentParser(description="train stock or crypto model")
     parser.add_argument("--ticker", type=str, help="stock or crypto data file name", required=True)
-    parser.add_argument("--time_window_size", type=str, help="time window size", default=1)
-    parser.add_argument("--batch_size", type=str, help="batch size", default=32)
-    parser.add_argument("--epoches", type=str, help="epoches", default=750)
+    parser.add_argument("--time_window_size", type=int, help="time window size", default=1)
+    parser.add_argument("--batch_size", type=int, help="batch size", default=32)
+    parser.add_argument("--hidden_size", type=int, help="hidden size", default=128)
+    parser.add_argument("--fc_size", type=int, help="fc size", default=128)
+    parser.add_argument("--num_layers", type=int, help="num layers", default=2)
+    parser.add_argument("--dropout_prob", type=float, help="dropout prob", default=0.10)
+    parser.add_argument("--batch_first", type=bool, help="batch first", default=True)
+    parser.add_argument("--epoches", type=int, help="epoches", default=750)
     parser.add_argument("--model_name", type=str, help="model name", default="lstm_market")
     parser.add_argument("--save_model", type=bool, help="if save model == false, then save checkpoint", default=False)
     parser.add_argument("--checkpoint_name", type=str, help="checkpoint name", default="checkpoint")
@@ -29,6 +34,11 @@ def main(args):
     ticker = args.ticker
     time_window_size = args.time_window_size
     batch_size = args.batch_size
+    hidden_size = args.hidden_size
+    fc_size = args.fc_size
+    num_layers = args.num_layers
+    dropout_prob = args.dropout_prob
+    batch_first = args.batch_first
     epoches = args.epoches
     model_name = args.model_name
     save_model = args.save_model
@@ -67,11 +77,11 @@ def main(args):
     model_params = {
         'input_size': len(data_processed.columns),
         'output_size': len(targets),
-        'hidden_size': 128,
-        'fc_size': 128,
-        'num_layers': 2,
-        'dropout_prob': 0.10,
-        'batch_first': True
+        'hidden_size': hidden_size,
+        'fc_size': fc_size,
+        'num_layers': num_layers,
+        'dropout_prob': dropout_prob,
+        'batch_first': batch_first
     }
 
     # convert to lstm format

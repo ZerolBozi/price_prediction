@@ -11,6 +11,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="train stock or crypto model")
     parser.add_argument("--ticker", type=str, help="stock or crypto data file name", required=True)
     parser.add_argument("--time_window_size", type=int, help="time window size", default=1)
+    parser.add_argument("--split_ratio", type=float, help="split ratio", default=0.6)
     parser.add_argument("--batch_size", type=int, help="batch size", default=32)
     parser.add_argument("--hidden_size", type=int, help="hidden size", default=128)
     parser.add_argument("--fc_size", type=int, help="fc size", default=128)
@@ -33,6 +34,7 @@ def main(args):
     # init args
     ticker = args.ticker
     time_window_size = args.time_window_size
+    split_ratio = args.split_ratio
     batch_size = args.batch_size
     hidden_size = args.hidden_size
     fc_size = args.fc_size
@@ -62,7 +64,7 @@ def main(args):
 
     y_idx_list = get_y_idx(data_processed.columns, targets)
 
-    train_np, test_np = split_datasets(data_scaled_np, 0.6)
+    train_np, test_np = split_datasets(data_scaled_np, split_ratio)
 
     # Train class需要使用到的資料
     original_data = {

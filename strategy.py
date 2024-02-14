@@ -1,0 +1,60 @@
+from TradingEnvironment import Action
+
+def trend_strategy(state: dict):
+    _balance = state.balance
+    _curr_original_data = state.curr_original_data.copy()
+    _curr_predict_data = state.curr_predict_data.copy()
+    _curr_positions= state.current_positions
+
+    # 餘額不足時, 不進行交易
+    if _balance < _curr_original_data['close']:
+        return Action.hold
+
+    if _curr_positions.get('long') is None:
+        # 相差的門檻值先不設定
+        if (_curr_original_data['close'] > _curr_predict_data['close'] and
+            _curr_original_data['close'] > _curr_predict_data['high'] and
+            _curr_original_data['close'] > _curr_predict_data['low']):
+            # 當真實價格大於所有的預測價格時, 則開啟long
+            return Action.long
+    else:
+        if (_curr_original_data['close'] < _curr_predict_data['close'] or
+            _curr_original_data['close'] < _curr_predict_data['high'] or
+            _curr_original_data['close'] < _curr_predict_data['low']):
+            # 當真實價格小於任一預測價格時, 則關閉long
+            return Action.close_long
+    
+    if _curr_positions.get('short') is None:
+        if (_curr_original_data['close'] < _curr_predict_data['close'] and
+            _curr_original_data['close'] < _curr_predict_data['high'] and
+            _curr_original_data['close'] < _curr_predict_data['low']):
+            # 當真實價格小於所有的預測價格時, 則開啟short
+            return Action.short
+    else:
+        if (_curr_original_data['close'] > _curr_predict_data['close'] or
+            _curr_original_data['close'] > _curr_predict_data['high'] or
+            _curr_original_data['close'] > _curr_predict_data['low']):
+            # 當真實價格大於任一預測價格時, 則關閉short
+            return Action.close_short
+        
+    return Action.hold
+
+def regression_strategy(state: dict):
+    _balance = state.balance
+    _curr_original_data = state.curr_original_data.copy()
+    _curr_predict_data = state.curr_predict_data.copy()
+    _current_positions= state.current_positions
+
+    # 餘額不足時, 不進行交易
+    if _balance < _curr_original_data['close']:
+        return Action.hold
+
+def daytrading_strategy(state: dict):
+    _balance = state.balance
+    _curr_original_data = state.curr_original_data.copy()
+    _curr_predict_data = state.curr_predict_data.copy()
+    _current_positions= state.current_positions
+
+    # 餘額不足時, 不進行交易
+    if _balance < _curr_original_data['close']:
+        return Action.hold

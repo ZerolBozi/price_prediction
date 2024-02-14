@@ -228,6 +228,9 @@ class TradingEnvironment:
         self.trading_profits.append(profit)
         self.trading_returns.append(return_rate)
 
+        # update blance
+        self.balance += profit
+
         return c_trade_info.order_id, profit
 
     def render(self):

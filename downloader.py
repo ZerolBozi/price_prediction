@@ -3,9 +3,9 @@ from time import sleep
 from datetime import datetime
 
 import ccxt
+import pandas as pd
 import shioaji as sj
 import yfinance as yf
-import pandas as pd
 
 def downloader(
         market_tpye: str,

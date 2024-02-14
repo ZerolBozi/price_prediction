@@ -236,5 +236,6 @@ class TradingEnvironment:
 
         return c_trade_info.order_id, profit
 
+    # todo, last edited 2024/02/14
     def render(self):
         pass

@@ -48,6 +48,10 @@ class TrainDQN:
         should_save_model: bool=False,
         model_path: str="./models",
         model_name: str=None,
+        checkpoint_path: str="./checkpoints",
+        checkpoint_name: str=None,
+        use_early_stopping: bool=True,
+        patience: int=100
     ):
         """
         model_params: dict
@@ -58,6 +62,7 @@ class TrainDQN:
             :key 'trading_strategy', type: callable
             :key 'dqn_units', int
 
+            # DQN params (not used)
             :key 'e_greedy', type: Decimal
             :key 'replace_target_iter', type: int
             :key 'e_greedy_increment', type: Decimal
@@ -79,8 +84,15 @@ class TrainDQN:
         self.should_save_model = should_save_model
         self.model_path = model_path
         self.model_name = model_name
+        self.checkpoint_path = checkpoint_path
+        self.checkpoint_name = checkpoint_name
         
-
+        # early stopping
+        self.use_early_stopping = use_early_stopping
+        self.patience = patience
+        self.best_reward = float('-inf')
+        self.counter = 0
+        
         self.env = TradingEnvironment(
             ticker=self.ticker,
             original_data=self.original_data,
@@ -115,6 +127,22 @@ class TrainDQN:
         self.criteria = nn.MSELoss().to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 500))
+
+        self.load_checkpoint()
+
+    def load_checkpoint(self):
+        if (self.checkpoint_path is None) or (self.checkpoint_name is None):
+            return
+        
+        if not os.path.exists(f"{self.checkpoint_path}/{self.checkpoint_name}.pth"):
+            return
+        
+        checkpoint = torch.load(f"{self.checkpoint_path}/{self.checkpoint_name}.pth")
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.replay_buffer.buffer = checkpoint['replay_buffer']
+
+        print('load checkpoint successed!')
 
     def select_action(self, state: dict):
         keys = self.env.get_state_keys()
@@ -160,8 +188,36 @@ class TrainDQN:
             
             print(f"Episode {episode}, Total Reward: {total_reward}")
 
-    def save_model(self):
-        pass
+            if total_reward > self.best_reward:
+                self.best_reward = total_reward
+                self.counter = 0
+            else:
+                self.counter += 1
+
+            if (self.use_early_stopping) and (self.counter >= self.patience):
+                print("Early stopping triggered")
+                break
+
+        self.env.render()
+
+    def save_model(self, episode: int, total_reward: float):
+        if (self.model_path is None) or (self.model_name is None):
+            return
+        
+        if (self.should_save_model):
+            torch.save(self.model, f'{self.model_path}/{self.model_name}.pt')
+        else:
+            self.save_checkpoint(episode, total_reward)
+
+    def save_checkpoint(self, episode: int, total_reward:float):
+        checkpoint = {
+            'episode': episode,
+            'total_reward': total_reward,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'replay_buffer': self.replay_buffer.buffer
+        }
+        torch.save(checkpoint, f'{self.checkpoint_path}/{self.checkpoint_name}_episode_{episode}.pth')
 
 class Train:
     def __init__(
@@ -269,7 +325,7 @@ class Train:
         checkpoint = torch.load(f"{self.checkpoint_path}/{self.checkpoint_name}.pth")
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.best_val_loss = checkpoint['val_loss']
+        # self.best_val_loss = checkpoint['val_loss']
         # self.epochs_no_improve = checkpoint['epoch']
 
         print('load checkpoint successed!')

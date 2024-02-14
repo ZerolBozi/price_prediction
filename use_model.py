@@ -60,6 +60,7 @@ def use_model(ticker: str, model_name: str, model_params: dict, data_path: str =
         predicted_data.to_csv(output_path + '.csv', index=False)
 
     plot_results(ticker, real_data, predicted_data, model_params)
+    return real_data, predicted_data
 
 def plot_results(ticker: str, real_data: pd.DataFrame, predicted_data: pd.DataFrame, model_params: dict):
     plt.figure(figsize=(12, 6))

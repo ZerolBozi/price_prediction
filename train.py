@@ -1,4 +1,7 @@
 import os
+import random
+from decimal import Decimal
+from collections import deque
 
 import torch
 import numpy as np
@@ -10,8 +13,104 @@ from sklearn import metrics
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import DataLoader
 
-from models import LSTM, GRU
 from processer import inverse_scale_datasets
+from TradingEnvironment import TradingEnvironment
+from models import LSTM, GRU, DQN, DoubleDQN, DuelingDQN
+
+class RepalyBuffer:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.buffer = deque(maxlen=capacity)
+
+    def push(self, state, action, reward, next_state, done):
+        self.buffer.append((state, action, reward, next_state, done))
+
+    def sample(self, batch_size: int):
+        batch = random.sample(self.buffer, batch_size)
+        state, action, reward, next_state, done = zip(*batch)
+        return torch.stack(state), torch.tensor(action), torch.tensor(reward), torch.stack(next_state), torch.tensor(done)
+
+    def __len__(self):
+        return len(self.buffer)
+    
+class TrainDQN:
+    def __init__(
+        self,
+        ticker: str,
+        original_data: pd.DataFrame,
+        predict_data: pd.DataFrame,
+        model_params: dict,
+        model_type: str='DQN',
+        epoches: int=1000,
+        learning_rate: float=0.00001,
+        should_save_model: bool=False,
+        model_path: str="./models",
+        model_name: str=None,
+    ):
+        """
+        model_params: dict
+            :key 'initial_balance', type: Decimal
+            :key 'position_size_ratio', type: Decimal
+            :key 'window_size', type: int
+            :key 'memory_size', type: int
+            :key 'batch_size', type: int
+            :key 'reward_decay', type: Decimal
+            :key 'e_greedy', type: Decimal
+            :key 'replace_target_iter', type: int
+            :key 'e_greedy_increment', type: Decimal
+            :key 'trading_strategy', type: callable
+            :key 'dqn_units', int
+
+        """
+        if not all(key in model_params.keys() for key in ['trading_strategy']):
+            raise Exception("model_params should have keys: trading_strategy")
+        
+        self.ticker = ticker
+        self.original_data = original_data
+        self.predict_data = predict_data
+        self.model_params = model_params
+        self.model_type = model_type.upper()
+        self.epoches = epoches
+        self.learning_rate = learning_rate
+        self.should_save_model = should_save_model
+        self.model_path = model_path
+        self.model_name = model_name
+
+        self.env = TradingEnvironment(
+            ticker=self.ticker,
+            original_data=self.original_data,
+            predict_data=self.predict_data,
+            initial_balance=self.model_params.get('initial_balance', Decimal(10000)),
+            position_size_ratio=self.model_params.get('position_size_ratio', Decimal(0.5)),
+            window_size=self.model_params.get('window_size', 10),
+            trading_strategy=self.model_params.get('trading_strategy')
+        )
+
+        model_dict = {
+            'DQN': DQN(
+                input_size=self.env.window_size,
+                output_size=self.env.action_size,
+                units=self.model_params.get('dqn_units', 128)
+            ),
+            'DoubleDQN': DoubleDQN(
+                input_size=self.env.window_size,
+                output_size=self.env.action_size,
+                units=self.model_params.get('dqn_units', 128)
+            ),
+            'DuelingDQN': DuelingDQN(
+                input_size=self.env.window_size,
+                output_size=self.env.action_size,
+                units=self.model_params.get('dqn_units', 128)
+            )
+        }
+
+        self.model = model_dict.get(self.model_type, "DQN")
+    
+    def run(self):
+        pass
+
+    def save_model(self):
+        pass
 
 class Train:
     def __init__(

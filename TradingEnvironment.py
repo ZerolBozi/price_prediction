@@ -3,6 +3,7 @@ from decimal import Decimal
 from dataclasses import dataclass
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class Action:
     hold = 0
@@ -67,8 +68,8 @@ class TradingEnvironment:
             predict_data: pd.DataFrame,
             initial_balance: Decimal,
             position_size_ratio: Decimal,
-            n_actions: int,
             window_size: int,
+            action_size: int,
             trading_strategy: callable
         ):
         self.ticker = ticker
@@ -76,8 +77,8 @@ class TradingEnvironment:
         self.predict_data = predict_data
         self.initial_balance = initial_balance
         self.position_size_ratio = position_size_ratio
-        self.n_actions = n_actions
         self.window_size = window_size
+        self.action_size = action_size
 
         # 交易策略function
         self.trading_strategy = trading_strategy
@@ -89,6 +90,7 @@ class TradingEnvironment:
         self.current_positions = {'long': None, 'short': None}
         self.current_positions_oid = {}
         self.history_positions = []
+        self.history_close_positions = []
         self.trading_profits = []
         self.trading_returns = []
         self.current_step = 0
@@ -178,6 +180,7 @@ class TradingEnvironment:
 
         self.current_positions[side] = o_trade_info
         self.current_positions_oid[order_id] = o_trade_info
+        self.history_positions.append(o_trade_info)
 
         # amount = cost
         self.balance -= amount
@@ -228,6 +231,7 @@ class TradingEnvironment:
         self.current_positions[side] = None
         self.current_positions_oid.pop(oid)
         self.history_positions.append(c_trade_info)
+        self.history_close_positions.append(c_trade_info)
         self.trading_profits.append(profit)
         self.trading_returns.append(return_rate)
 
@@ -238,4 +242,51 @@ class TradingEnvironment:
 
     # todo, last edited 2024/02/14
     def render(self):
-        pass
+        # show trading record
+        plt.figure(figsize=(12, 6))
+
+        close_price = self.original_data['close']
+        plt.plot(close_price, 'close price')
+
+        marker_dict = {
+            'open': {
+                'long': {'marker': '^', 'color': 'g'},
+                'short': {'marker': 'v', 'color': 'r'}
+            },
+            'close': {
+                'long': {'marker': '^', 'color': 'b'},
+                'short': {'marker': 'v', 'color': 'b'}
+            }
+        }
+
+        for trade in self.history_positions:
+            plt.plot(
+                close_price, 
+                marker_dict[trade.order_type][trade.side]['marker'], 
+                markersize=10, 
+                color=marker_dict[trade.order_type][trade.side]['color']
+            )
+
+        plt.title(f"{self.ticker} trading record")
+        plt.xlabel('Time')
+        plt.ylabel('Stock Price')
+        plt.legend()
+        plt.show()
+
+        # show trading profits
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.trading_profits, label='Trading Profits')
+        plt.title(f"{self.ticker} trading profits")
+        plt.xlabel('Time')
+        plt.ylabel('Profits')
+        plt.legend()
+        plt.show()
+
+        # show trading returns
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.trading_returns, label='Trading Returns')
+        plt.title(f"{self.ticker} trading returns")
+        plt.xlabel('Time')
+        plt.ylabel('Returns')
+        plt.legend()
+        plt.show()

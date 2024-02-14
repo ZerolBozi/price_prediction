@@ -74,15 +74,15 @@ class DuelingDQN(nn.Module):
         return q_values
 
 # Double DQN 
-class DDQN(DQN):
+class DoubleDQN(DQN):
     def __init__(self, input_size:int, n_actions:int, units: int=32):
-        super(DDQN, self).__init__(input_size, n_actions, units)
+        super(DoubleDQN, self).__init__(input_size, n_actions, units)
 
         self.target_fc1 = nn.Linear(input_size, units)
         self.target_fc2 = nn.Linear(units, n_actions)
 
     def forward(self, x):
-        x = super(DDQN, self).forward(x)
+        x = super(DoubleDQN, self).forward(x)
         
         target_x = self.target_fc1(x)
         target_x = self.relu(target_x)

@@ -1,3 +1,5 @@
+import pandas as pd
+
 from TradingEnvironment import Action
 
 def trend_strategy(state: dict):

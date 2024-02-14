@@ -163,3 +163,16 @@ def get_y_idx(data_columns:pd.core.indexes.base.Index, targets: list) -> list:
     if set(targets).issubset(set(data_columns)):
         return [data_columns.get_loc(target) for target in targets]
     return []
+
+def dict_convert_to_tensor(data: dict, keys: list):
+    """
+    把字典轉成tensor
+
+    :param data: 字典
+    :param keys: 字典的key (可以自己設定順序)
+
+    :return: list tensor
+    """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    return [torch.tensor(data[key], dtype=torch.float32).to(device) for key in keys]

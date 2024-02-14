@@ -13,11 +13,11 @@ from sklearn import metrics
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import DataLoader
 
-from processer import inverse_scale_datasets
 from TradingEnvironment import TradingEnvironment
 from models import LSTM, GRU, DQN, DoubleDQN, DuelingDQN
+from processer import inverse_scale_datasets, dict_convert_to_tensor
 
-class RepalyBuffer:
+class ReplayBuffer:
     def __init__(self, capacity: int):
         self.capacity = capacity
         self.buffer = deque(maxlen=capacity)
@@ -41,7 +41,9 @@ class TrainDQN:
         predict_data: pd.DataFrame,
         model_params: dict,
         model_type: str='DQN',
-        epoches: int=1000,
+        episodes: int=1000,
+        reward_decay: Decimal=0.9,
+        batch_size: int=32,
         learning_rate: float=0.00001,
         should_save_model: bool=False,
         model_path: str="./models",
@@ -53,28 +55,31 @@ class TrainDQN:
             :key 'position_size_ratio', type: Decimal
             :key 'window_size', type: int
             :key 'memory_size', type: int
-            :key 'batch_size', type: int
-            :key 'reward_decay', type: Decimal
-            :key 'e_greedy', type: Decimal
-            :key 'replace_target_iter', type: int
-            :key 'e_greedy_increment', type: Decimal
             :key 'trading_strategy', type: callable
             :key 'dqn_units', int
 
+            :key 'e_greedy', type: Decimal
+            :key 'replace_target_iter', type: int
+            :key 'e_greedy_increment', type: Decimal
         """
         if not all(key in model_params.keys() for key in ['trading_strategy']):
             raise Exception("model_params should have keys: trading_strategy")
+        
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.ticker = ticker
         self.original_data = original_data
         self.predict_data = predict_data
         self.model_params = model_params
-        self.model_type = model_type.upper()
-        self.epoches = epoches
+        self.model_type = model_type
+        self.episodes = episodes
+        self.reward_decay = reward_decay
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.should_save_model = should_save_model
         self.model_path = model_path
         self.model_name = model_name
+        
 
         self.env = TradingEnvironment(
             ticker=self.ticker,
@@ -105,9 +110,55 @@ class TrainDQN:
         }
 
         self.model = model_dict.get(self.model_type, "DQN")
+        self.model.to(self.device)
+
+        self.criteria = nn.MSELoss().to(self.device)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 500))
+
+    def select_action(self, state: dict):
+        keys = self.env.get_state_keys()
+        state_tensors = dict_convert_to_tensor(state, keys)
+        state_tensor = torch.stack(state_tensors).unsqueeze(0).to(self.device)
+        
+        with torch.no_grad():
+            q_values = self.model(state_tensor)
+
+        action = q_values.argmax(dim=1).item()
+        return action
+    
+    def optimize_model(self, batch: tuple):
+        state, action, reward, next_state, done = batch
+
+        q_values = self.model(state)
+        next_q_values = self.model(next_state)
+        q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+        next_q_value = next_q_values.max(1).values.detach()
+        expected_q_value = reward + self.reward_decay * next_q_value * (1 - done)
+        loss = self.criteria(q_value, expected_q_value)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
     
     def run(self):
-        pass
+        for episode in self.episodes:
+            state = self.env.reset()
+            total_reward = 0
+            done = False
+
+            while not done:
+                action = self.select_action(state)
+                next_state, reward, done = self.env.step(action)
+                total_reward += reward
+                self.replay_buffer.push(state, action, reward, next_state, done)
+                state = next_state
+
+                if len(self.replay_buffer) > self.batch_size:
+                    batch = self.replay_buffer.sample(self.batch_size)
+                    self.optimize_model(batch)
+            
+            print(f"Episode {episode}, Total Reward: {total_reward}")
 
     def save_model(self):
         pass

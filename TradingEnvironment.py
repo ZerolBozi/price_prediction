@@ -2,6 +2,7 @@ from time import time
 from decimal import Decimal
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -85,6 +86,9 @@ class TradingEnvironment:
 
         self.reset()
 
+    def get_state_keys(self):
+        return ['balance', 'trading_profits', 'trading_returns']
+    
     def reset(self):
         self.balance = self.initial_balance
         self.current_positions = {'long': None, 'short': None}
@@ -94,42 +98,36 @@ class TradingEnvironment:
         self.trading_profits = []
         self.trading_returns = []
         self.current_step = 0
+        return self.get_state()
 
     def get_state(self):
         """
         return {
             'balance': float,
-            'curr_original_data': pd.Series,
-            'curr_predict_data': pd.Series,
-            'current_positions': list,
-            'history_positions': list,
             'trading_profits': list,
             'trading_returns': list,
         }
         """
-        curr_original_data = self.original_data.iloc[self.current_step]
-        curr_predict_data = self.predict_data.iloc[self.current_step]
-
         return {
             'balance': self.balance,
-            'curr_original_data': curr_original_data,
-            'curr_predict_data': curr_predict_data,
-            'current_positions': self.current_positions,
-            'current_positions_oid': self.current_positions_oid,
-            'history_positions': self.history_positions,
-            'trading_profits': self.trading_profits,
-            'trading_returns': self.trading_returns,
+            'trading_profits': np.array(self.trading_profits),
+            'trading_returns': np.array(self.trading_returns),
         }
 
     def step(self):
         state = self.get_state()
 
-        action = self.trading_strategy(state)
+        _state = state.copy()
+        _state['curr_original_data'] = self.original_data.iloc[self.current_step]
+        _state['curr_predict_data'] = self.predict_data.iloc[self.current_step]
+        _state['current_positions'] = self.current_positions
+
+        action = self.trading_strategy(_state)
 
         if action == Action.hold:
             return
         
-        price = state['curr_original_data']['close']
+        price = self.original_data['close'].iloc[self.current_step]
         free_balance = self.balance * self.position_size_ratio
         size = free_balance // price
         reward = 0

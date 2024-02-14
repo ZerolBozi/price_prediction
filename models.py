@@ -40,6 +40,59 @@ class DQN(nn.Module):
         x = self.relu(x)
         x = self.fc2(x)
         return x
+    
+# Dueling DQN
+class DuelingDQN(nn.Module):
+    def __init__(self, input_size:int, n_actions:int, units: int=32):
+        super(DuelingDQN, self).__init__()
+
+        self.feature_layer = nn.Sequential(
+            nn.Linear(input_size, units),
+            nn.ReLU()
+        )
+
+        self.value_stream = nn.Sequential(
+            nn.Linear(units, units),
+            nn.ReLU(),
+            nn.Linear(units, 1)
+        )
+
+        self.advantage_stream = nn.Sequential(
+            nn.Linear(units, units),
+            nn.ReLU(),
+            nn.Linear(units, n_actions)
+        )
+
+    def forward(self, x):
+        x = self.feature_layer(x)
+        value = self.value_stream(x)
+        advantage = self.advantage_stream(x)
+
+        # Combine value and advantage to get Q values
+        q_values = value + (advantage - advantage.mean(dim=1, keepdim=True))
+
+        return q_values
+
+# Double DQN 
+class DDQN(DQN):
+    def __init__(self, input_size:int, n_actions:int, units: int=32):
+        super(DDQN, self).__init__(input_size, n_actions, units)
+
+        self.target_fc1 = nn.Linear(input_size, units)
+        self.target_fc2 = nn.Linear(units, n_actions)
+
+    def forward(self, x):
+        x = super(DDQN, self).forward(x)
+        
+        target_x = self.target_fc1(x)
+        target_x = self.relu(target_x)
+        target_x = self.target_fc2(target_x)
+
+        return x, target_x
+    
+    def update_target_network(self):
+        self.target_fc1.load_state_dict(self.fc1.state_dict())
+        self.target_fc2.load_state_dict(self.fc2.state_dict())
 
 class LSTM(nn.Module):
     def __init__(

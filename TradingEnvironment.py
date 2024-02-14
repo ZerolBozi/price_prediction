@@ -180,6 +180,9 @@ class TradingEnvironment:
         self.current_positions[side] = o_trade_info
         self.current_positions_oid[order_id] = o_trade_info
 
+        # amount = cost
+        self.balance -= amount
+
         return o_trade_info.order_id
 
     def close_position(self, oid: int, price: Decimal, size: Decimal, c_step: int) -> TradeInfo:
@@ -192,6 +195,7 @@ class TradingEnvironment:
         tax = Decimal(0)
         order_id = int(time())
 
+        cost = self.current_positions[oid].cost
         amount = price * size
 
         if self.current_positions[oid].side == "long":
@@ -229,7 +233,7 @@ class TradingEnvironment:
         self.trading_returns.append(return_rate)
 
         # update blance
-        self.balance += profit
+        self.balance = self.balance + cost + profit
 
         return c_trade_info.order_id, profit
 

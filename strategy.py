@@ -3,10 +3,10 @@ import pandas as pd
 from TradingEnvironment import Action
 
 def trend_strategy(state: dict):
-    _balance = state.balance
-    _curr_original_data = state.curr_original_data.copy()
-    _curr_predict_data = state.curr_predict_data.copy()
-    _curr_positions= state.current_positions
+    _balance = state['balance']
+    _curr_original_data = state['curr_original_data'].copy()
+    _curr_predict_data = state['curr_predict_data'].copy()
+    _curr_positions= state['current_positions']
 
     # 餘額不足時, 不進行交易
     if _balance < _curr_original_data['close']:

@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class Action:
+    space = 5
     hold = 0
     long = 1
     short = 2
@@ -87,7 +88,8 @@ class TradingEnvironment:
         self.reset()
 
     def get_state_keys(self):
-        return ['balance', 'trading_profits', 'trading_returns']
+        return ['balance']
+        # return ['balance', 'trading_profits', 'trading_returns']
     
     def reset(self):
         self.balance = self.initial_balance
@@ -108,47 +110,42 @@ class TradingEnvironment:
             'trading_returns': list,
         }
         """
-        return {
-            'balance': self.balance,
-            'trading_profits': np.array(self.trading_profits),
-            'trading_returns': np.array(self.trading_returns),
-        }
+        return self.balance
 
-    def step(self):
+    def step(self, action: int):
         state = self.get_state()
 
-        _state = state.copy()
+        _state = {'balance': state}
         _state['curr_original_data'] = self.original_data.iloc[self.current_step]
         _state['curr_predict_data'] = self.predict_data.iloc[self.current_step]
         _state['current_positions'] = self.current_positions
-
-        action = self.trading_strategy(_state)
-
-        if action == Action.hold:
-            return
         
+        _action = self.trading_strategy(_state)
         price = self.original_data['close'].iloc[self.current_step]
         free_balance = self.balance * self.position_size_ratio
-        size = free_balance // price
-        reward = 0
-        
-        if action == Action.long:
+        size = free_balance // Decimal(price)
+        reward = 0.0
+
+        if (action == Action.long) and (_action == Action.long):
             self.open_position('long', price, size, self.current_step)
-    
-        elif action == Action.short:
+            reward = 1.0
+        
+        elif (action == Action.short) and (_action == Action.short):
             self.open_position('short', price, size, self.current_step)
-        
-        elif action == Action.close_long:
-            _, reward = self.close_position(self.current_positions['long'].order_id, price, size, self.current_step)
-        
-        elif action == Action.close_short:
+            reward = 1.0
+
+        elif (action == Action.close_long) and (_action == Action.close_long):
+            _, _reward = self.close_position(self.current_positions['long'].order_id, price, size, self.current_step)
+            reward = float(_reward)
+
+        elif (action == Action.close_short) and (_action == Action.close_short):
             _, reward = self.close_position(self.current_positions['short'].order_id, price, size, self.current_step)
 
         self.current_step += 1
 
         done = self.current_step == self.window_size
 
-        return self.get_state(),  reward, done
+        return self.get_state(), action, reward, done
         
     def open_position(self, side: str, price: Decimal, size: Decimal, c_step: int) -> int:
         """
@@ -185,7 +182,7 @@ class TradingEnvironment:
 
         return o_trade_info.order_id
 
-    def close_position(self, oid: int, price: Decimal, size: Decimal, c_step: int) -> TradeInfo:
+    def close_position(self, oid: int, price: Decimal, size: Decimal, c_step: int) -> tuple:
         """
         fee and tax default is 0
 
@@ -205,7 +202,7 @@ class TradingEnvironment:
             side = "long"
             profit = (price - self.current_positions[oid].price) * size
         else:
-            profit = 0 
+            profit = Decimal(0) 
             
         return_rate = profit / self.current_positions[oid].cost
 

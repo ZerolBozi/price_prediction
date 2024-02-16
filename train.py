@@ -13,14 +13,15 @@ from sklearn import metrics
 from sklearn.metrics import mean_squared_error
 from torch.utils.data import DataLoader
 
-from TradingEnvironment import TradingEnvironment
+from TradingEnvironment import TradingEnvironment, Action
 from models import LSTM, GRU, DQN, DoubleDQN, DuelingDQN
 from processer import inverse_scale_datasets, dict_convert_to_tensor
 
 class ReplayBuffer:
-    def __init__(self, capacity: int):
+    def __init__(self, capacity: int, device: str):
         self.capacity = capacity
         self.buffer = deque(maxlen=capacity)
+        self.device = device
 
     def push(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
@@ -28,7 +29,18 @@ class ReplayBuffer:
     def sample(self, batch_size: int):
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = zip(*batch)
-        return torch.stack(state), torch.tensor(action), torch.tensor(reward), torch.stack(next_state), torch.tensor(done)
+
+        state = [float(s) for s in state]
+        next_state = [float(ns) for ns in next_state]
+
+        state_t = torch.tensor(state, dtype=torch.float32).to(self.device)
+        action_t = torch.tensor(action, dtype=torch.int32).to(self.device)
+        reward_t = torch.tensor(reward, dtype=torch.float32).to(self.device)
+        next_state_t = torch.tensor(next_state, dtype=torch.float32).to(self.device)
+        done_t = torch.tensor(done, dtype=torch.float32).to(self.device)
+
+        return state_t, action_t, reward_t, next_state_t, done_t
+
 
     def __len__(self):
         return len(self.buffer)
@@ -45,6 +57,7 @@ class TrainDQN:
         reward_decay: Decimal=0.9,
         batch_size: int=32,
         learning_rate: float=0.00001,
+        e_greedy: float=0.1,
         should_save_model: bool=False,
         model_path: str="./models",
         model_name: str=None,
@@ -86,6 +99,7 @@ class TrainDQN:
         self.model_name = model_name
         self.checkpoint_path = checkpoint_path
         self.checkpoint_name = checkpoint_name
+        self.e_greedy = e_greedy
         
         # early stopping
         self.use_early_stopping = use_early_stopping
@@ -99,24 +113,25 @@ class TrainDQN:
             predict_data=self.predict_data,
             initial_balance=self.model_params.get('initial_balance', Decimal(10000)),
             position_size_ratio=self.model_params.get('position_size_ratio', Decimal(0.5)),
-            window_size=self.model_params.get('window_size', 10),
+            window_size=self.model_params.get('window_size', 1),
+            action_size=Action.space,
             trading_strategy=self.model_params.get('trading_strategy')
         )
 
         model_dict = {
             'DQN': DQN(
                 input_size=self.env.window_size,
-                output_size=self.env.action_size,
-                units=self.model_params.get('dqn_units', 128)
+                n_actions=self.env.action_size,
+                units=self.model_params.get('dqn_units', 32)
             ),
             'DoubleDQN': DoubleDQN(
                 input_size=self.env.window_size,
-                output_size=self.env.action_size,
+                n_actions=self.env.action_size,
                 units=self.model_params.get('dqn_units', 128)
             ),
             'DuelingDQN': DuelingDQN(
                 input_size=self.env.window_size,
-                output_size=self.env.action_size,
+                n_actions=self.env.action_size,
                 units=self.model_params.get('dqn_units', 128)
             )
         }
@@ -126,7 +141,7 @@ class TrainDQN:
 
         self.criteria = nn.MSELoss().to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 500))
+        self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 500), device=self.device)
 
         self.load_checkpoint()
 
@@ -144,40 +159,47 @@ class TrainDQN:
 
         print('load checkpoint successed!')
 
-    def select_action(self, state: dict):
-        keys = self.env.get_state_keys()
-        state_tensors = dict_convert_to_tensor(state, keys)
-        state_tensor = torch.stack(state_tensors).unsqueeze(0).to(self.device)
-        
-        with torch.no_grad():
-            q_values = self.model(state_tensor)
+    def select_action(self, state: Decimal):
+        state_f = float(state)
+        state_tensor = torch.tensor([state_f], dtype=torch.float32).to(self.device)
 
-        action = q_values.argmax(dim=1).item()
+        if np.random.uniform() < self.e_greedy:
+            action = np.random.choice(self.env.action_size)
+        else:
+            with torch.no_grad():
+                q_values = self.model(state_tensor)
+                action = torch.argmax(q_values).item()
+        
         return action
     
     def optimize_model(self, batch: tuple):
         state, action, reward, next_state, done = batch
 
-        q_values = self.model(state)
-        next_q_values = self.model(next_state)
-        q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
-        next_q_value = next_q_values.max(1).values.detach()
-        expected_q_value = reward + self.reward_decay * next_q_value * (1 - done)
-        loss = self.criteria(q_value, expected_q_value)
+        current_q_values = self.model(state).gather(1, action.unsqueeze(1))
+
+        print("Shapes:")
+        print("state:", state.shape)
+        print("action.unsqueeze(1):", action.unsqueeze(1).shape)
+        print("current_q_values:", current_q_values.shape)
+
+        next_q_values = self.model(next_state).max(1)[0].detach()
+        target_q_values = reward + self.reward_decay * next_q_values * (1 - done)
+
+        loss = self.criteria(current_q_values, target_q_values.unsqueeze(1))
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
     
     def run(self):
-        for episode in self.episodes:
+        for episode in range(self.episodes):
             state = self.env.reset()
             total_reward = 0
             done = False
 
             while not done:
                 action = self.select_action(state)
-                next_state, reward, done = self.env.step(action)
+                next_state, action, reward, done = self.env.step(action)
                 total_reward += reward
                 self.replay_buffer.push(state, action, reward, next_state, done)
                 state = next_state

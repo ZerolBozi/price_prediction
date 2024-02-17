@@ -210,9 +210,6 @@ class TradingEnvironment:
         tax = Decimal(0)
         order_id = int(time())
 
-        if oid not in self.current_positions_oid.keys():
-            print()
-
         cost = self.current_positions_oid[oid].cost
         amount = price * size
 

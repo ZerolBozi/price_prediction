@@ -29,17 +29,17 @@ class Model:
         return model
     
 class DQN(nn.Module):
-    def __init__(self, input_size:int, n_actions:int, units: int=32):
+    def __init__(self, n_observations:int, n_actions:int, units: int=32):
         super(DQN, self).__init__()
-        self.fc1 = nn.Linear(input_size, units)
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(units, n_actions)
+        self.fc1 = nn.Linear(n_observations, units)
+        self.fc2 = nn.Linear(units, units)
+        self.fc3 = nn.Linear(units, n_actions)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        return x
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        return self.fc3(x)
     
 # Dueling DQN
 class DuelingDQN(nn.Module):

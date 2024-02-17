@@ -86,66 +86,84 @@ class TradingEnvironment:
         self.trading_strategy = trading_strategy
 
         self.reset()
-
-    def get_state_keys(self):
-        return ['balance']
-        # return ['balance', 'trading_profits', 'trading_returns']
     
-    def reset(self):
+    def reset(self)->np.ndarray:
         self.balance = self.initial_balance
         self.current_positions = {'long': None, 'short': None}
         self.current_positions_oid = {}
         self.history_positions = []
         self.history_close_positions = []
+        self.total_profits = Decimal(0)
         self.trading_profits = []
         self.trading_returns = []
         self.current_step = 0
         return self.get_state()
 
-    def get_state(self):
-        """
-        return {
-            'balance': float,
-            'trading_profits': list,
-            'trading_returns': list,
-        }
-        """
-        return self.balance
+    def get_state(self)->np.ndarray:
+        datas = []
 
-    def step(self, action: int):
-        state = self.get_state()
+        datas.append(float(self.balance))
+        datas.append(float(self.total_profits))
 
-        _state = {'balance': state}
-        _state['curr_original_data'] = self.original_data.iloc[self.current_step]
-        _state['curr_predict_data'] = self.predict_data.iloc[self.current_step]
-        _state['current_positions'] = self.current_positions
+        for col in self.original_data.columns:
+            datas.append(self.original_data[col][self.current_step])
         
-        _action = self.trading_strategy(_state)
-        price = self.original_data['close'].iloc[self.current_step]
+        for col in self.predict_data.columns:
+            datas.append(self.predict_data[col][self.current_step])
+
+        return np.hstack(datas).astype(np.float64)
+
+    def step(self, action: int)->tuple[np.ndarray, float, bool]:
+        _state = {
+            'balance': self.balance,
+            'curr_original_data': self.original_data.iloc[self.current_step],
+            'curr_predict_data': self.predict_data.iloc[self.current_step],
+            'current_positions': self.current_positions,
+            'current_step': self.current_step,
+        }
+        
+        trading_strategy_action = self.trading_strategy(_state)
+        price = Decimal(self.original_data['close'].iloc[self.current_step])
         free_balance = self.balance * self.position_size_ratio
-        size = free_balance // Decimal(price)
+        size = free_balance // price
         reward = 0.0
 
-        if (action == Action.long) and (_action == Action.long):
+        if (
+            (action == Action.long) and 
+            (trading_strategy_action == Action.long) and 
+            (self.current_positions['long'] is None)
+        ):
             self.open_position('long', price, size, self.current_step)
             reward = 1.0
         
-        elif (action == Action.short) and (_action == Action.short):
+        elif (
+            (action == Action.short) and 
+            (trading_strategy_action == Action.short) and 
+            (self.current_positions['short'] is None)
+        ):
             self.open_position('short', price, size, self.current_step)
             reward = 1.0
 
-        elif (action == Action.close_long) and (_action == Action.close_long):
+        elif (
+            (action == Action.close_long) and 
+            (trading_strategy_action == Action.close_long) and 
+            (self.current_positions['long'] is not None)
+        ):
             _, _reward = self.close_position(self.current_positions['long'].order_id, price, size, self.current_step)
             reward = float(_reward)
 
-        elif (action == Action.close_short) and (_action == Action.close_short):
+        elif (
+            (action == Action.close_short) and 
+            (trading_strategy_action == Action.close_short) and 
+            (self.current_positions['short'] is not None)
+        ):
             _, reward = self.close_position(self.current_positions['short'].order_id, price, size, self.current_step)
 
         self.current_step += 1
 
         done = self.current_step == self.window_size
 
-        return self.get_state(), action, reward, done
+        return self.get_state(), reward, done
         
     def open_position(self, side: str, price: Decimal, size: Decimal, c_step: int) -> int:
         """
@@ -192,19 +210,22 @@ class TradingEnvironment:
         tax = Decimal(0)
         order_id = int(time())
 
-        cost = self.current_positions[oid].cost
+        if oid not in self.current_positions_oid.keys():
+            print()
+
+        cost = self.current_positions_oid[oid].cost
         amount = price * size
 
-        if self.current_positions[oid].side == "long":
+        if self.current_positions_oid[oid].side == "long":
             side = "short"
-            profit = (self.current_positions[oid].price - price) * size
-        elif self.current_positions[oid].side == "short":
+            profit = (self.current_positions_oid[oid].price - price) * size
+        elif self.current_positions_oid[oid].side == "short":
             side = "long"
-            profit = (price - self.current_positions[oid].price) * size
+            profit = (price - self.current_positions_oid[oid].price) * size
         else:
             profit = Decimal(0) 
             
-        return_rate = profit / self.current_positions[oid].cost
+        return_rate = profit / self.current_positions_oid[oid].cost
 
         c_trade_info = TradeInfo(
             order_id=order_id,
@@ -223,10 +244,11 @@ class TradingEnvironment:
             return_rate=return_rate
         )
 
-        self.current_positions[side] = None
+        self.current_positions[self.current_positions_oid[oid].side] = None
         self.current_positions_oid.pop(oid)
         self.history_positions.append(c_trade_info)
         self.history_close_positions.append(c_trade_info)
+        self.total_profits += profit
         self.trading_profits.append(profit)
         self.trading_returns.append(return_rate)
 
@@ -240,7 +262,7 @@ class TradingEnvironment:
         plt.figure(figsize=(12, 6))
 
         close_price = self.original_data['close']
-        plt.plot(close_price, 'close price')
+        plt.plot(close_price, label='close price')
 
         marker_dict = {
             'open': {

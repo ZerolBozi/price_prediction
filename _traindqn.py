@@ -19,7 +19,7 @@ def main():
         predict_data=predict_data,
         model_params={
             'trading_strategy': trend_strategy,
-            'window_size': 5
+            'window_size': 30
         },
         checkpoint_name='dqn_btc_1h',
         

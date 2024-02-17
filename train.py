@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 
 from TradingEnvironment import TradingEnvironment, Action
 from models import LSTM, GRU, DQN, DoubleDQN, DuelingDQN
-from processer import inverse_scale_datasets, dict_convert_to_tensor
+from processer import inverse_scale_datasets
 
 class ReplayBuffer:
     def __init__(self, capacity: int, device: str):
@@ -23,24 +23,27 @@ class ReplayBuffer:
         self.buffer = deque(maxlen=capacity)
         self.device = device
 
-    def push(self, state, action, reward, next_state, done):
+    def push(self, state:np.ndarray, action:int, reward:float, next_state:np.ndarray, done: bool):
         self.buffer.append((state, action, reward, next_state, done))
 
     def sample(self, batch_size: int):
         batch = random.sample(self.buffer, batch_size)
-        state, action, reward, next_state, done = zip(*batch)
 
-        state = [float(s) for s in state]
-        next_state = [float(ns) for ns in next_state]
+        states, actions, rewards, next_states, dones = zip(*batch)
 
-        state_t = torch.tensor(state, dtype=torch.float32).to(self.device)
-        action_t = torch.tensor(action, dtype=torch.int32).to(self.device)
-        reward_t = torch.tensor(reward, dtype=torch.float32).to(self.device)
-        next_state_t = torch.tensor(next_state, dtype=torch.float32).to(self.device)
-        done_t = torch.tensor(done, dtype=torch.float32).to(self.device)
+        states = np.vstack(states).astype(np.float32)
+        actions = np.array(actions).astype(np.int64)
+        rewards = np.array(rewards).astype(np.float32)
+        next_states = np.vstack(next_states).astype(np.float32)
+        dones = np.array(dones).astype(np.float32)
 
-        return state_t, action_t, reward_t, next_state_t, done_t
+        states = torch.from_numpy(states).to(self.device)
+        actions = torch.from_numpy(actions).to(self.device)
+        rewards = torch.from_numpy(rewards).to(self.device)
+        next_states = torch.from_numpy(next_states).to(self.device)
+        dones = torch.from_numpy(dones).to(self.device)
 
+        return states, actions, rewards, next_states, dones
 
     def __len__(self):
         return len(self.buffer)
@@ -111,7 +114,7 @@ class TrainDQN:
             ticker=self.ticker,
             original_data=self.original_data,
             predict_data=self.predict_data,
-            initial_balance=self.model_params.get('initial_balance', Decimal(10000)),
+            initial_balance=self.model_params.get('initial_balance', Decimal(100000)),
             position_size_ratio=self.model_params.get('position_size_ratio', Decimal(0.5)),
             window_size=self.model_params.get('window_size', 1),
             action_size=Action.space,
@@ -120,9 +123,9 @@ class TrainDQN:
 
         model_dict = {
             'DQN': DQN(
-                input_size=self.env.window_size,
+                n_observations=len(self.env.get_state()),
                 n_actions=self.env.action_size,
-                units=self.model_params.get('dqn_units', 32)
+                units=self.model_params.get('dqn_units', 128)
             ),
             'DoubleDQN': DoubleDQN(
                 input_size=self.env.window_size,
@@ -141,7 +144,7 @@ class TrainDQN:
 
         self.criteria = nn.MSELoss().to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 500), device=self.device)
+        self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 10000), device=self.device)
 
         self.load_checkpoint()
 
@@ -159,15 +162,15 @@ class TrainDQN:
 
         print('load checkpoint successed!')
 
-    def select_action(self, state: Decimal):
-        state_f = float(state)
-        state_tensor = torch.tensor([state_f], dtype=torch.float32).to(self.device)
+    def select_action(self, state: np.ndarray):
+        _state = np.array(state)
+        state_tensor = torch.tensor(_state, dtype=torch.float32).to(self.device)
 
         if np.random.uniform() < self.e_greedy:
             action = np.random.choice(self.env.action_size)
         else:
             with torch.no_grad():
-                q_values = self.model(state_tensor)
+                q_values = self.model(state_tensor).detach().cpu().squeeze(0)
                 action = torch.argmax(q_values).item()
         
         return action
@@ -175,15 +178,17 @@ class TrainDQN:
     def optimize_model(self, batch: tuple):
         state, action, reward, next_state, done = batch
 
+        torch.as_tensor(state, dtype=torch.float32).to(self.device)
+        torch.as_tensor(action, dtype=torch.int64).to(self.device)
+        torch.as_tensor(reward, dtype=torch.float32).to(self.device)
+        torch.as_tensor(next_state, dtype=torch.float32).to(self.device)
+        torch.as_tensor(done, dtype=torch.float32).to(self.device)
+
         current_q_values = self.model(state).gather(1, action.unsqueeze(1))
 
-        print("Shapes:")
-        print("state:", state.shape)
-        print("action.unsqueeze(1):", action.unsqueeze(1).shape)
-        print("current_q_values:", current_q_values.shape)
-
-        next_q_values = self.model(next_state).max(1)[0].detach()
-        target_q_values = reward + self.reward_decay * next_q_values * (1 - done)
+        with torch.no_grad():
+            next_q_values = self.model(next_state).max(1)[0]
+            target_q_values = reward + self.reward_decay * next_q_values * (1 - done)
 
         loss = self.criteria(current_q_values, target_q_values.unsqueeze(1))
 
@@ -199,8 +204,8 @@ class TrainDQN:
 
             while not done:
                 action = self.select_action(state)
-                next_state, action, reward, done = self.env.step(action)
-                total_reward += reward
+                next_state, reward, done = self.env.step(action)
+                total_reward += float(reward)
                 self.replay_buffer.push(state, action, reward, next_state, done)
                 state = next_state
 

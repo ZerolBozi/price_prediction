@@ -133,7 +133,7 @@ class TradingEnvironment:
             (trading_strategy_action == Action.long) and 
             (self.current_positions['long'] is None)
         ):
-            self.open_position('long', price, size, self.current_step)
+            self.open_position('long', price, size)
             reward = 1.0
         
         elif (
@@ -141,7 +141,7 @@ class TradingEnvironment:
             (trading_strategy_action == Action.short) and 
             (self.current_positions['short'] is None)
         ):
-            self.open_position('short', price, size, self.current_step)
+            self.open_position('short', price, size)
             reward = 1.0
 
         elif (
@@ -149,7 +149,7 @@ class TradingEnvironment:
             (trading_strategy_action == Action.close_long) and 
             (self.current_positions['long'] is not None)
         ):
-            _, _reward = self.close_position(self.current_positions['long'].order_id, price, size, self.current_step)
+            _, _reward = self.close_position(self.current_positions['long'].order_id, price, size)
             reward = float(_reward)
 
         elif (
@@ -157,7 +157,7 @@ class TradingEnvironment:
             (trading_strategy_action == Action.close_short) and 
             (self.current_positions['short'] is not None)
         ):
-            _, reward = self.close_position(self.current_positions['short'].order_id, price, size, self.current_step)
+            _, reward = self.close_position(self.current_positions['short'].order_id, price, size)
 
         self.current_step += 1
 
@@ -165,7 +165,7 @@ class TradingEnvironment:
 
         return self.get_state(), reward, done
         
-    def open_position(self, side: str, price: Decimal, size: Decimal, c_step: int) -> int:
+    def open_position(self, side: str, price: Decimal, size: Decimal) -> int:
         """
         fee default is 0, open position no need tax
 
@@ -173,7 +173,8 @@ class TradingEnvironment:
         """
         fee =  Decimal(0)
         tax = Decimal(0)
-        order_id = int(time())
+        c_step = self.current_step
+        order_id = int(time()) + c_step
 
         amount = price * size
 
@@ -193,14 +194,13 @@ class TradingEnvironment:
 
         self.current_positions[side] = o_trade_info
         self.current_positions_oid[order_id] = o_trade_info
-        self.history_positions.append(o_trade_info)
 
         # amount = cost
         self.balance -= amount
 
         return o_trade_info.order_id
 
-    def close_position(self, oid: int, price: Decimal, size: Decimal, c_step: int) -> tuple:
+    def close_position(self, oid: int, price: Decimal, size: Decimal) -> tuple:
         """
         fee and tax default is 0
 
@@ -208,21 +208,24 @@ class TradingEnvironment:
         """
         fee = Decimal(0)
         tax = Decimal(0)
-        order_id = int(time())
+        c_step = self.current_step
+        order_id = int(time()) + c_step
 
-        cost = self.current_positions_oid[oid].cost
+        o_trade_info = self.current_positions_oid[oid]
+
+        cost = o_trade_info.cost
         amount = price * size
 
-        if self.current_positions_oid[oid].side == "long":
+        if o_trade_info.side == "long":
             side = "short"
-            profit = (self.current_positions_oid[oid].price - price) * size
-        elif self.current_positions_oid[oid].side == "short":
+            profit = (price - o_trade_info.price) * size
+        elif o_trade_info.side == "short":
             side = "long"
-            profit = (price - self.current_positions_oid[oid].price) * size
+            profit = (o_trade_info.price - price) * size
         else:
             profit = Decimal(0) 
             
-        return_rate = profit / self.current_positions_oid[oid].cost
+        return_rate = profit / o_trade_info.cost
 
         c_trade_info = TradeInfo(
             order_id=order_id,
@@ -241,9 +244,9 @@ class TradingEnvironment:
             return_rate=return_rate
         )
 
-        self.current_positions[self.current_positions_oid[oid].side] = None
+        self.current_positions[o_trade_info.side] = None
         self.current_positions_oid.pop(oid)
-        self.history_positions.append(c_trade_info)
+        self.history_positions.append((o_trade_info, c_trade_info))
         self.history_close_positions.append(c_trade_info)
         self.total_profits += profit
         self.trading_profits.append(profit)
@@ -272,12 +275,18 @@ class TradingEnvironment:
             }
         }
 
-        for trade in self.history_positions:
+        for o_trade, c_trade in self.history_positions:
             plt.plot(
                 close_price, 
-                marker_dict[trade.order_type][trade.side]['marker'], 
+                marker_dict[o_trade.order_type][o_trade.side]['marker'], 
                 markersize=10, 
-                color=marker_dict[trade.order_type][trade.side]['color']
+                color=marker_dict[o_trade.order_type][o_trade.side]['color']
+            )
+            plt.plot(
+                close_price, 
+                marker_dict[c_trade.order_type][c_trade.side]['marker'], 
+                markersize=10, 
+                color=marker_dict[c_trade.order_type][c_trade.side]['color']
             )
 
         plt.title(f"{self.ticker} trading record")

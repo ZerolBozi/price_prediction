@@ -20,8 +20,8 @@ def trend_strategy(state: dict):
             # 當真實價格大於所有的預測價格時, 則開啟long
             return Action.long
     else:
-        if (_curr_original_data['close'] < _curr_predict_data['close'] and
-            _curr_original_data['close'] < _curr_predict_data['high'] and
+        if (_curr_original_data['close'] < _curr_predict_data['close'] or
+            _curr_original_data['close'] < _curr_predict_data['high'] or
             _curr_original_data['close'] < _curr_predict_data['low']):
             # 當真實價格小於任一預測價格時, 則關閉long
             return Action.close_long
@@ -33,8 +33,8 @@ def trend_strategy(state: dict):
             # 當真實價格小於所有的預測價格時, 則開啟short
             return Action.short
     else:
-        if (_curr_original_data['close'] > _curr_predict_data['close'] and
-            _curr_original_data['close'] > _curr_predict_data['high'] and
+        if (_curr_original_data['close'] > _curr_predict_data['close'] or
+            _curr_original_data['close'] > _curr_predict_data['high'] or
             _curr_original_data['close'] > _curr_predict_data['low']):
             # 當真實價格大於任一預測價格時, 則關閉short
             return Action.close_short

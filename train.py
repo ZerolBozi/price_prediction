@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 from torch.utils.data import DataLoader
 
 from TradingEnvironment import TradingEnvironment, Action
-from models import LSTM, GRU, DQN, DoubleDQN, DuelingDQN
+from models import LSTM, GRU, BiLSTM, BiGRU, CNNLSTM, CNNGRU, DQN, DoubleDQN, DuelingDQN
 from processer import inverse_scale_datasets
 
 class ReplayBuffer:
@@ -139,11 +139,14 @@ class TrainDQN:
             )
         }
 
-        self.model = model_dict.get(self.model_type, "DQN")
-        self.model.to(self.device)
+        self.net = model_dict.get(self.model_type, "DQN")
+        self.target_net = model_dict.get(self.model_type, "DQN")
+
+        self.net.to(self.device)
+        self.target_net.to(self.device)
 
         self.criteria = nn.MSELoss().to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.learning_rate)
         self.replay_buffer = ReplayBuffer(self.model_params.get('memory_size', 10000), device=self.device)
 
         self.load_checkpoint()
@@ -156,13 +159,16 @@ class TrainDQN:
             return
         
         checkpoint = torch.load(f"{self.checkpoint_path}/{self.checkpoint_name}.pth")
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+
+        self.net.load_state_dict(checkpoint['net_state_dict'])
+        self.target_net.load_state_dict(checkpoint['target_net_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.replay_buffer.buffer = checkpoint['replay_buffer']
 
         print('load checkpoint successed!')
 
     def select_action(self, state: np.ndarray):
+        # 因為會出現waring, 所以要先轉np.array()
         _state = np.array(state)
         state_tensor = torch.tensor(_state, dtype=torch.float32).to(self.device)
 
@@ -170,12 +176,14 @@ class TrainDQN:
             action = np.random.choice(self.env.action_size)
         else:
             with torch.no_grad():
-                q_values = self.model(state_tensor).detach().cpu().squeeze(0)
+                q_values = self.net(state_tensor).detach().cpu().squeeze(0)
                 action = torch.argmax(q_values).item()
         
         return action
     
     def optimize_model(self, batch: tuple):
+        self.target_net.load_state_dict(self.net.state_dict())
+
         state, action, reward, next_state, done = batch
 
         torch.as_tensor(state, dtype=torch.float32).to(self.device)
@@ -184,10 +192,10 @@ class TrainDQN:
         torch.as_tensor(next_state, dtype=torch.float32).to(self.device)
         torch.as_tensor(done, dtype=torch.float32).to(self.device)
 
-        current_q_values = self.model(state).gather(1, action.unsqueeze(1))
+        current_q_values = self.net(state).gather(1, action.unsqueeze(1))
 
         with torch.no_grad():
-            next_q_values = self.model(next_state).max(1)[0]
+            next_q_values = self.target_net(next_state).max(1)[0]
             target_q_values = reward + self.reward_decay * next_q_values * (1 - done)
 
         loss = self.criteria(current_q_values, target_q_values.unsqueeze(1))
@@ -208,7 +216,7 @@ class TrainDQN:
                 total_reward += float(reward)
                 self.replay_buffer.push(state, action, reward, next_state, done)
                 state = next_state
-
+                    
                 if len(self.replay_buffer) > self.batch_size:
                     batch = self.replay_buffer.sample(self.batch_size)
                     self.optimize_model(batch)
@@ -232,7 +240,7 @@ class TrainDQN:
             return
         
         if (self.should_save_model):
-            torch.save(self.model, f'{self.model_path}/{self.model_name}.pt')
+            torch.save(self.net, f'{self.model_path}/{self.model_name}.pt')
         else:
             self.save_checkpoint(episode, total_reward)
 
@@ -240,7 +248,8 @@ class TrainDQN:
         checkpoint = {
             'episode': episode,
             'total_reward': total_reward,
-            'model_state_dict': self.model.state_dict(),
+            'net_state_dict': self.net.state_dict(),
+            'target_net_state_dict': self.target_net.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'replay_buffer': self.replay_buffer.buffer
         }
@@ -281,7 +290,10 @@ class Train:
         
         if not all(key in model_params.keys() for key in ['input_size', 'output_size']):
             raise Exception("model_params should have keys: input_size, output_size")
-        
+
+        if ('CNN' in model_type) and ('input_channels' not in model_params.keys()):
+            raise Exception("model_params should have keys: input_channels")
+
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.ticker = ticker
@@ -291,7 +303,7 @@ class Train:
         self.epoches = epoches
         self.original_data = original_data
         self.model_params = model_params
-        self.model_type = model_type.upper()
+        self.model_type = model_type
 
         self.should_save_model = should_save_model
         self.model_path = model_path
@@ -316,6 +328,56 @@ class Train:
                 input_size=self.model_params.get('input_size'), 
                 output_size=self.model_params.get('output_size'),
                 hidden_size=self.model_params.get('hidden_size', 128),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            ),
+            'BiLSTM': BiLSTM(
+                input_size=self.model_params.get('input_size'), 
+                output_size=self.model_params.get('output_size'),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            ),
+            'BiGRU': BiGRU(
+                input_size=self.model_params.get('input_size'), 
+                output_size=self.model_params.get('output_size'),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            ),
+            'CNNLSTM': CNNLSTM(
+                input_channels=self.model_params.get('input_channels', 1),
+                output_size=self.model_params.get('output_size'),
+                seq_length=self.model_params.get('input_size'),
+                feture_size=self.model_params.get('feture_size', 1),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                output_channels=self.model_params.get('output_channels', 16),
+                kernel_size=self.model_params.get('kernel_size', 3),
+                cnn_out_size=self.model_params.get('cnn_out_size', 32),
+                pool_kernel_size=self.model_params.get('pool_kernel_size', 2),
+                lstm_out_size=self.model_params.get('lstm_out_size', 64),
+                fc_size=self.model_params.get('fc_size', 128),
+                num_layers=self.model_params.get('num_layers', 2),
+                dropout_prob=self.model_params.get('dropout_prob', 0.10),
+                batch_first=self.model_params.get('batch_first', True)
+            ),
+            'CNNGRU': CNNGRU(
+                input_channels=self.model_params.get('input_channels', 1),
+                output_size=self.model_params.get('output_size'),
+                seq_length=self.model_params.get('input_size'),
+                feture_size=self.model_params.get('feture_size', 1),
+                hidden_size=self.model_params.get('hidden_size', 128),
+                output_channels=self.model_params.get('output_channels', 16),
+                kernel_size=self.model_params.get('kernel_size', 3),
+                cnn_out_size=self.model_params.get('cnn_out_size', 32),
+                pool_kernel_size=self.model_params.get('pool_kernel_size', 2),
+                lstm_out_size=self.model_params.get('lstm_out_size', 64),
                 fc_size=self.model_params.get('fc_size', 128),
                 num_layers=self.model_params.get('num_layers', 2),
                 dropout_prob=self.model_params.get('dropout_prob', 0.10),

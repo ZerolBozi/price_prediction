@@ -100,18 +100,19 @@ class TradingEnvironment:
         return self.get_state()
 
     def get_state(self)->np.ndarray:
-        datas = []
+        # datas.append(float(self.balance))
+        # datas.append(float(self.total_profits))
 
-        datas.append(float(self.balance))
-        datas.append(float(self.total_profits))
-
-        for col in self.original_data.columns:
-            datas.append(self.original_data[col][self.current_step])
+        # for col in self.original_data.columns:
+        #     datas.append(self.original_data[col][self.current_step])
         
-        for col in self.predict_data.columns:
-            datas.append(self.predict_data[col][self.current_step])
+        # for col in self.predict_data.columns:
+        #     datas.append(self.predict_data[col][self.current_step])
 
-        return np.hstack(datas).astype(np.float64)
+        # return np.hstack(datas).astype(np.float64)
+        datas = []
+        
+        window_size = self.window_size + 1
 
     def step(self, action: int)->tuple[np.ndarray, float, bool]:
         _state = {
@@ -161,7 +162,7 @@ class TradingEnvironment:
 
         self.current_step += 1
 
-        done = self.current_step == self.window_size
+        done = self.current_step == len(self.original_data['open']) - 2
 
         return self.get_state(), reward, done
         

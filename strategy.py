@@ -53,7 +53,7 @@ def regression_strategy(state: dict):
         return Action.hold
 
 def daytrading_strategy(state: dict):
-    _balance = state.balance
+    _balance = state['balance']
     _curr_original_data = state['curr_original_data'].copy()
     _curr_predict_data = state['curr_predict_data'].copy()
     _curr_positions= state['current_positions']

@@ -23,7 +23,7 @@ if __name__ == "__main__":
     #     output_path=output_path
     # )
     checkpoint_name = f"checkpoint3"
-    ticker = "2330"
+    ticker = "NVDA"
 
     data = pd.read_csv(f'./datas/{ticker}.csv')
     
@@ -89,7 +89,7 @@ if __name__ == "__main__":
         original_data=original_data,
         model_params=model_params,
         should_save_model=True,
-        model_name=f"lstm_stock_crypto",
+        model_name=f"lstm_NVDA",
         checkpoint_name=checkpoint_name,
         use_early_stopping=True
     )

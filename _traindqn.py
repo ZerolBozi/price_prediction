@@ -1,11 +1,11 @@
-from strategy import trend_strategy
+from strategy import trend_strategy,daytrading_strategy
 from train import TrainDQN
 from use_model import use_model
 
 def main():
     original_data, predict_data = use_model(
-        'binance_btc_kline_1h_spot',
-        'lstm_stock_crypto',
+        'NVDA',
+        'lstm_NVDA',
         {
             'time_window_size': 1,
             'real_cols': ['close'],
@@ -14,15 +14,17 @@ def main():
     )
 
     train_dqn = TrainDQN(
-        ticker='binance_btc_kline_1h_spot',
+        ticker='NVDA',
         original_data=original_data,
         predict_data=predict_data,
         model_params={
-            'trading_strategy': trend_strategy,
+            'trading_strategy': daytrading_strategy,
             'window_size': 30
         },
+        should_save_model=True,
+        model_name='dqn_NVDA',
         checkpoint_name='dqn_btc_1h',
-        
+   
     )
 
     train_dqn.run()

@@ -97,6 +97,7 @@ class TradingEnvironment:
         self.trading_profits = []
         self.trading_returns = []
         self.current_step = 0
+        self.total_trading_profits = []
         return self.get_state()
 
     def get_state(self)->np.ndarray:
@@ -113,6 +114,20 @@ class TradingEnvironment:
         datas = []
         
         window_size = self.window_size + 1
+        d = self.current_step - window_size + 1 #判斷當前step是否足夠window_size
+        block = []
+        if d<0:
+            for i in range(-d):
+                block.append(self.original_data['close'][0]) #取第一筆資料填充不足window_size的部分
+            for i in range(self.current_step+1):
+                block.append(self.original_data['close'][i]) #填充剩餘的部分
+        else:
+            block = list(self.original_data['close'][d : self.current_step + 1]) #取得當前的window_size的資料
+                
+        for i in range(window_size-1):
+            datas.append((block[i + 1] - block[i])/(block[i]+0.0001)) #輸出每天的漲跌幅作為狀態輸入
+
+        return np.hstack(datas).astype(np.float64)
 
     def step(self, action: int)->tuple[np.ndarray, float, bool]:
         _state = {
@@ -120,6 +135,7 @@ class TradingEnvironment:
             'curr_original_data': self.original_data.iloc[self.current_step],
             'curr_predict_data': self.predict_data.iloc[self.current_step],
             'current_positions': self.current_positions,
+            'current_positions_oid': self.current_positions_oid,
             'current_step': self.current_step,
         }
         
@@ -255,10 +271,40 @@ class TradingEnvironment:
 
         # update blance
         self.balance = self.balance + cost + profit
+        self.total_trading_profits.append(self.total_profits)
 
         return c_trade_info.order_id, profit
 
     def render(self):
+        with open('./test.txt', 'w+') as f:
+            for o_trade, c_trade in self.history_positions:
+                f.write("OPEN TRADE INFO\n")
+                f.write(f"order_id: {o_trade.order_id}\n")
+                f.write(f"order_type: {o_trade.order_type}\n")
+                f.write(f"ticker: {o_trade.ticker}\n")
+                f.write(f"current_step: {o_trade.current_step}\n")
+                f.write(f"side: {o_trade.side}\n")
+                f.write(f"price: {o_trade.price}\n")
+                f.write(f"size: {o_trade.size}\n")
+                f.write(f"cost: {o_trade.cost}\n")
+                f.write(f"from_position: {o_trade.from_position}\n")
+                f.write(f"profit: {o_trade.profit}\n")
+                f.write(f"return_rate: {o_trade.return_rate}\n")
+                f.write("------------------------------------\n")
+                f.write("CLOSE TRADE INFO\n")
+                f.write(f"order_id: {c_trade.order_id}\n")
+                f.write(f"order_type: {c_trade.order_type}\n")
+                f.write(f"ticker: {c_trade.ticker}\n")
+                f.write(f"current_step: {c_trade.current_step}\n")
+                f.write(f"side: {c_trade.side}\n")
+                f.write(f"price: {c_trade.price}\n")
+                f.write(f"size: {c_trade.size}\n")
+                f.write(f"cost: {c_trade.cost}\n")
+                f.write(f"from_position: {c_trade.from_position}\n")
+                f.write(f"profit: {c_trade.profit}\n")
+                f.write(f"return_rate: {c_trade.return_rate}\n")
+                f.write("------------------------------------\n")
+
         # show trading record
         plt.figure(figsize=(12, 6))
 
@@ -272,7 +318,7 @@ class TradingEnvironment:
             },
             'close': {
                 'long': {'marker': '^', 'color': 'b'},
-                'short': {'marker': 'v', 'color': 'b'}
+                'short': {'marker': 'v', 'color': 'c'}
             }
         }
 
@@ -281,14 +327,44 @@ class TradingEnvironment:
                 close_price, 
                 marker_dict[o_trade.order_type][o_trade.side]['marker'], 
                 markersize=10, 
-                color=marker_dict[o_trade.order_type][o_trade.side]['color']
+                color=marker_dict[o_trade.order_type][o_trade.side]['color'],
+                markevery=o_trade.current_step
             )
             plt.plot(
                 close_price, 
                 marker_dict[c_trade.order_type][c_trade.side]['marker'], 
                 markersize=10, 
-                color=marker_dict[c_trade.order_type][c_trade.side]['color']
+                color=marker_dict[c_trade.order_type][c_trade.side]['color'],
+                markevery=c_trade.current_step
             )
+
+
+        plt.title(f"{self.ticker} trading record")
+        plt.xlabel('Time')
+        plt.ylabel('Stock Price')
+        plt.legend()
+        plt.show()
+
+        plt.figure(figsize=(12, 6))
+
+        plt.plot(close_price, label='close price')
+
+        for o_trade, c_trade in self.history_positions:
+            plt.scatter(
+                o_trade.current_step,
+                o_trade.price,
+                s=100,
+                marker=marker_dict[o_trade.order_type][o_trade.side]['marker'],
+                color=marker_dict[o_trade.order_type][o_trade.side]['color'],
+            )
+            plt.scatter(
+                c_trade.current_step,
+                c_trade.price,
+                s=100,
+                marker=marker_dict[c_trade.order_type][c_trade.side]['marker'],
+                color=marker_dict[c_trade.order_type][c_trade.side]['color'],
+            )
+            
 
         plt.title(f"{self.ticker} trading record")
         plt.xlabel('Time')
@@ -298,7 +374,7 @@ class TradingEnvironment:
 
         # show trading profits
         plt.figure(figsize=(12, 6))
-        plt.plot(self.trading_profits, label='Trading Profits')
+        plt.plot(self.total_trading_profits, label='Trading Profits')
         plt.title(f"{self.ticker} trading profits")
         plt.xlabel('Time')
         plt.ylabel('Profits')
@@ -306,10 +382,10 @@ class TradingEnvironment:
         plt.show()
 
         # show trading returns
-        plt.figure(figsize=(12, 6))
-        plt.plot(self.trading_returns, label='Trading Returns')
-        plt.title(f"{self.ticker} trading returns")
-        plt.xlabel('Time')
-        plt.ylabel('Returns')
-        plt.legend()
-        plt.show()
+        # plt.figure(figsize=(12, 6))
+        # plt.plot(self.trading_returns, label='Trading Returns')
+        # plt.title(f"{self.ticker} trading returns")
+        # plt.xlabel('Time')
+        # plt.ylabel('Returns')
+        # plt.legend()
+        # plt.show()

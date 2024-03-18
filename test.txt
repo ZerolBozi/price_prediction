@@ -1,312 +1,208 @@
 OPEN TRADE INFO
-order_id: 1710002526
+order_id: 1710082179
 order_type: open
 ticker: NVDA
-current_step: 36
-side: long
-price: 66.31500244140625
-size: 753
-cost: 49935.19683837890625
+current_step: 56
+side: short
+price: 62.049999237060546875
+size: 805
+cost: 49950.249385833740234375
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002539
+order_id: 1710082339
 order_type: close
 ticker: NVDA
-current_step: 49
-side: short
-price: 60.682498931884765625
-size: 412
-cost: 25001.189559936523437500
-from_position: 1710002526
-profit: -2320.591445922851562500
-return_rate: -0.04647205964629951637820045002
+current_step: 215
+side: long
+price: 39.130001068115234375
+size: 320
+cost: 12521.600341796875000000
+from_position: 1710082179
+profit: 7334.399414062500000000
+return_rate: 0.1468340900044152704761411667
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710002657
+order_id: 1710082338
 order_type: open
 ticker: NVDA
-current_step: 167
+current_step: 214
 side: long
-price: 32.3925018310546875
-size: 1507
-cost: 48815.5002593994140625
+price: 39.19499969482421875
+size: 638
+cost: 25006.40980529785156250
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002753
+order_id: 1710082346
 order_type: close
 ticker: NVDA
-current_step: 262
+current_step: 222
 side: short
-price: 42.2050018310546875
-size: 578
-cost: 24394.4910583496093750
-from_position: 1710002657
-profit: 5671.6250000000000000
-return_rate: 0.1161849201557230754311046282
+price: 41.3899993896484375
+size: 994
+cost: 41141.6593933105468750
+from_position: 1710082338
+profit: 2181.82969665527343750
+return_rate: 0.08725081743613717623777238174
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710002758
+order_id: 1710082351
 order_type: open
 ticker: NVDA
-current_step: 267
-side: short
-price: 39.13249969482421875
-size: 1320
-cost: 51654.89959716796875000
+current_step: 227
+side: long
+price: 45.9850006103515625
+size: 1190
+cost: 54722.1507263183593750
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002793
+order_id: 1710082499
 order_type: close
 ticker: NVDA
-current_step: 302
-side: long
-price: 39.3274993896484375
-size: 328
-cost: 12899.4197998046875000
-from_position: 1710002758
-profit: -63.95989990234375000
-return_rate: -0.001238215549756879502891288412
+current_step: 374
+side: short
+price: 47.622501373291015625
+size: 575
+cost: 27382.938289642333984375
+from_position: 1710082351
+profit: 941.562938690185546875
+return_rate: 0.01720624877116434877658864624
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710002791
+order_id: 1710082561
 order_type: open
 ticker: NVDA
-current_step: 300
+current_step: 436
 side: long
-price: 40.057498931884765625
-size: 645
-cost: 25837.086811065673828125
+price: 62.31999969482421875
+size: 443
+cost: 27607.75986480712890625
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002830
+order_id: 1710082587
 order_type: close
 ticker: NVDA
-current_step: 339
+current_step: 462
 side: short
-price: 41.75
-size: 927
-cost: 38702.25
-from_position: 1710002791
-profit: 1568.948490142822265625
-return_rate: 0.06072466689514171189152105782
+price: 66.91249847412109375
+size: 206
+cost: 13783.97468566894531250
+from_position: 1710082561
+profit: 946.05474853515625000
+return_rate: 0.03426771143938901762776631376
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710002848
+order_id: 1710082659
 order_type: open
 ticker: NVDA
-current_step: 357
+current_step: 533
 side: long
-price: 44.557498931884765625
-size: 1176
-cost: 52399.618743896484375000
+price: 88.0500030517577982891452847979962825775146484375
+size: 319
+cost: 28087.95097351073765423734585
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002948
+order_id: 1710082698
 order_type: close
 ticker: NVDA
-current_step: 457
+current_step: 572
 side: short
-price: 78.6750030517578125
-size: 333
-cost: 26198.7760162353515625
-from_position: 1710002848
-profit: 11361.128871917724609375
-return_rate: 0.2168170140215203501308145213
+price: 110.10250091552734375
+size: 127
+cost: 13983.01761627197265625
+from_position: 1710082659
+profit: 2800.667228698732273528548830
+return_rate: 0.09971062792511968050990162247
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710002978
+order_id: 1710082738
 order_type: open
 ticker: NVDA
-current_step: 487
+current_step: 612
 side: long
-price: 60.7675018310546875
-size: 956
-cost: 58093.7317504882812500
+price: 132.25750732421875
+size: 223
+cost: 29493.42413330078125
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710002981
+order_id: 1710082763
 order_type: close
 ticker: NVDA
-current_step: 490
+current_step: 637
 side: short
-price: 67.09999847412109375
-size: 433
-cost: 29054.29933929443359375
-from_position: 1710002978
-profit: 2741.97104644775390625
-return_rate: 0.04719908609459758930864124202
+price: 130.19500732421875
+size: 113
+cost: 14712.03582763671875
+from_position: 1710082738
+profit: -233.06250000000000
+return_rate: -0.007902185210731468066484902627
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710003141
+order_id: 1710082871
 order_type: open
 ticker: NVDA
-current_step: 649
+current_step: 744
 side: long
-price: 134.402496337890625
-size: 221
-cost: 29702.951690673828125
+price: 144
+size: 204
+cost: 29376
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710003219
+order_id: 1710082939
 order_type: close
 ticker: NVDA
-current_step: 727
+current_step: 812
 side: short
-price: 132.912506103515625
-size: 112
-cost: 14886.200683593750000
-from_position: 1710003141
-profit: -166.878906250000000
-return_rate: -0.005618260029773298883158080302
+price: 181.610000610351590921709430404007434844970703125
+size: 80
+cost: 14528.80004882812727373675443
+from_position: 1710082871
+profit: 3008.800048828127273736754432
+return_rate: 0.1024237489388659883488818911
 ------------------------------------
 OPEN TRADE INFO
-order_id: 1710003282
+order_id: 1710083255
 order_type: open
 ticker: NVDA
-current_step: 790
+current_step: 1126
 side: long
-price: 177.884994506835909078290569595992565155029296875
-size: 166
-cost: 29528.90908813476090699623455
+price: 119.59999847412109375
+size: 258
+cost: 30856.79960632324218750
 from_position: -1
 profit: 0
 return_rate: 0
 ------------------------------------
 CLOSE TRADE INFO
-order_id: 1710003292
+order_id: 1710083308
 order_type: close
 ticker: NVDA
-current_step: 799
+current_step: 1179
 side: short
-price: 199.850006103515596578290569595992565155029296875
-size: 74
-cost: 14788.90045166015414679350215
-from_position: 1710003282
-profit: 1625.410858154296875000000000
-return_rate: 0.05504473102284079195448800744
-------------------------------------
-OPEN TRADE INFO
-order_id: 1710003402
-order_type: open
-ticker: NVDA
-current_step: 909
-side: long
-price: 321.260009765625
-size: 94
-cost: 30198.440917968750
-from_position: -1
-profit: 0
-return_rate: 0
-------------------------------------
-CLOSE TRADE INFO
-order_id: 1710003406
-order_type: close
-ticker: NVDA
-current_step: 913
-side: short
-price: 318.260009765625
-size: 48
-cost: 15276.480468750000
-from_position: 1710003402
-profit: -144.000000000000
-return_rate: -0.004768458093289073365248202697
-------------------------------------
-OPEN TRADE INFO
-order_id: 1710003456
-order_type: open
-ticker: NVDA
-current_step: 963
-side: long
-price: 236.4199981689453125
-size: 128
-cost: 30261.7597656250000000
-from_position: -1
-profit: 0
-return_rate: 0
-------------------------------------
-CLOSE TRADE INFO
-order_id: 1710003479
-order_type: close
-ticker: NVDA
-current_step: 986
-side: short
-price: 281.5
-size: 54
-cost: 15201.0
-from_position: 1710003456
-profit: 2434.3200988769531250
-return_rate: 0.08044211961665728993138708151
-------------------------------------
-OPEN TRADE INFO
-order_id: 1710003594
-order_type: open
-ticker: NVDA
-current_step: 1100
-side: long
-price: 137.1399993896484375
-size: 230
-cost: 31542.1998596191406250
-from_position: -1
-profit: 0
-return_rate: 0
-------------------------------------
-CLOSE TRADE INFO
-order_id: 1710003636
-order_type: close
-ticker: NVDA
-current_step: 1142
-side: short
-price: 141.55999755859375
-size: 112
-cost: 15854.71972656250000
-from_position: 1710003594
-profit: 495.0397949218750000
-return_rate: 0.01569452343606614907761804430
-------------------------------------
-OPEN TRADE INFO
-order_id: 1710003645
-order_type: open
-ticker: NVDA
-current_step: 1151
-side: long
-price: 156.7700042724609375
-size: 203
-cost: 31824.3108673095703125
-from_position: -1
-profit: 0
-return_rate: 0
-------------------------------------
-CLOSE TRADE INFO
-order_id: 1710003653
-order_type: close
-ticker: NVDA
-current_step: 1159
-side: short
-price: 169.2299957275390625
-size: 94
-cost: 15907.6195983886718750
-from_position: 1710003645
-profit: 1171.2391967773437500
-return_rate: 0.03680328543988862819152736808
+price: 146.029998779296875
+size: 105
+cost: 15333.149871826171875
+from_position: 1710083255
+profit: 2775.15003204345703125
+return_rate: 0.08993641814605968656050107196
 ------------------------------------

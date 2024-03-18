@@ -232,7 +232,7 @@ class TrainDQN:
             if (self.use_early_stopping) and (self.counter >= self.patience):
                 print("Early stopping triggered")
                 break
-
+        self.save_model(episode, total_reward)            
         self.env.render()
 
     def save_model(self, episode: int, total_reward: float):

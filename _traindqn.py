@@ -23,7 +23,7 @@ def main():
         },
         should_save_model=True,
         model_name='dqn_NVDA',
-        checkpoint_name='dqn_btc_1h',
+        checkpoint_name='dqn_NVDA',
    
     )
 

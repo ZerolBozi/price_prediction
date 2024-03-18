@@ -96,8 +96,10 @@ class TradingEnvironment:
         self.total_profits = Decimal(0)
         self.trading_profits = []
         self.trading_returns = []
-        self.current_step = 0
         self.total_trading_profits = []
+        self.positive_trading_profits = []
+        self.nagative_trading_profits = []
+        self.current_step = 0
         return self.get_state()
 
     def get_state(self)->np.ndarray:
@@ -273,6 +275,11 @@ class TradingEnvironment:
         self.balance = self.balance + cost + profit
         self.total_trading_profits.append(self.total_profits)
 
+        if profit > 0:
+            self.positive_trading_profits.append(profit)
+        else:
+            self.nagative_trading_profits.append(profit)
+
         return c_trade_info.order_id, profit
 
     def render(self):
@@ -380,6 +387,42 @@ class TradingEnvironment:
         plt.ylabel('Profits')
         plt.legend()
         plt.show()
+
+        win_rate = len(self.positive_trading_profits) / len(self.trading_profits)
+        avg_positive = np.mean(self.positive_trading_profits)
+        avg_negative = np.mean(self.nagative_trading_profits)
+        odds = avg_positive / avg_negative
+        # expected_value = win_rate * odds - (1 - win_rate)
+        expected_value = Decimal(win_rate) * (1 + odds) - 1
+        mdd = np.min(self.trading_profits)
+        mar = np.mean(self.trading_profits) / mdd
+        sqn = np.mean(self.trading_profits) / np.std(self.trading_profits) * np.sqrt(len(self.trading_profits))
+
+        print(f"{self.ticker} trading record")
+        print(self.initial_balance)
+        print("total profits: ", self.total_profits)
+        print(f"win rate: {win_rate}")
+        print(f"avg positive: {avg_positive}")
+        print(f"avg negative: {avg_negative}")
+        print(f"odds: {odds}")
+        print(f"expected value: {expected_value}")
+        print(f"mdd: {mdd}")
+        print(f"mar: {mar}")
+        print(f"sqn: {sqn}")
+
+        with open('trading.txt', 'w') as f:
+            f.write(f"{self.ticker} trading record\n")
+            f.write(f"initial_balance: {self.initial_balance}\n")
+            f.write(f"total profits: {self.total_profits}\n")
+            f.write(f"win rate: {win_rate}\n")
+            f.write(f"avg positive profits: {avg_positive}\n")
+            f.write(f"avg negative profits: {avg_negative}\n")
+            f.write(f"odds: {odds}\n")
+            f.write(f"expected value: {expected_value}\n")
+            f.write(f"mdd: {mdd}\n")
+            f.write(f"mar: {mar}\n")
+            f.write(f"sqn: {sqn}\n")
+
 
         # show trading returns
         # plt.figure(figsize=(12, 6))

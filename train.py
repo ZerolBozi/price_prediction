@@ -472,7 +472,12 @@ class Train:
         plt.plot(self.train_losses, label='Train Loss')
         plt.plot(self.val_losses, label='Validation Loss')
         plt.legend()
-        plt.show()
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_loss.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=1
+        )
+        #plt.show()
 
         self.calc_metrics()
 
@@ -507,7 +512,12 @@ class Train:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.show()
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=1
+        )
+        #plt.show()
 
     def save_model(self, epoch: int, val_loss:float):
         if (self.model_path is None) or (self.model_name is None):

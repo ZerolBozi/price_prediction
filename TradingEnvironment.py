@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import csv
 
 class Action:
     space = 5
@@ -283,40 +284,44 @@ class TradingEnvironment:
         return c_trade_info.order_id, profit
 
     def render(self):
-        with open('./test.txt', 'w+') as f:
+        with open('./records.csv', 'a+') as f:
+            field = ['ticker','order_id','order_type','current_step','side','price','size','cost','from_position','profit','return_rate']
+            csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
+            f.seek(0) #將檔案指標移回檔案開頭
+            try:
+                if not csv.Sniffer().has_header(f.read(1024)):
+                    csvWriter.writeheader() #寫入標題
+            except:
+                    csvWriter.writeheader()
             for o_trade, c_trade in self.history_positions:
-                f.write("OPEN TRADE INFO\n")
-                f.write(f"order_id: {o_trade.order_id}\n")
-                f.write(f"order_type: {o_trade.order_type}\n")
-                f.write(f"ticker: {o_trade.ticker}\n")
-                f.write(f"current_step: {o_trade.current_step}\n")
-                f.write(f"side: {o_trade.side}\n")
-                f.write(f"price: {o_trade.price}\n")
-                f.write(f"size: {o_trade.size}\n")
-                f.write(f"cost: {o_trade.cost}\n")
-                f.write(f"from_position: {o_trade.from_position}\n")
-                f.write(f"profit: {o_trade.profit}\n")
-                f.write(f"return_rate: {o_trade.return_rate}\n")
-                f.write("------------------------------------\n")
-                f.write("CLOSE TRADE INFO\n")
-                f.write(f"order_id: {c_trade.order_id}\n")
-                f.write(f"order_type: {c_trade.order_type}\n")
-                f.write(f"ticker: {c_trade.ticker}\n")
-                f.write(f"current_step: {c_trade.current_step}\n")
-                f.write(f"side: {c_trade.side}\n")
-                f.write(f"price: {c_trade.price}\n")
-                f.write(f"size: {c_trade.size}\n")
-                f.write(f"cost: {c_trade.cost}\n")
-                f.write(f"from_position: {c_trade.from_position}\n")
-                f.write(f"profit: {c_trade.profit}\n")
-                f.write(f"return_rate: {c_trade.return_rate}\n")
-                f.write("------------------------------------\n")
+                csvWriter.writerow({
+                    'ticker': o_trade.ticker,
+                    'order_id': o_trade.order_id,
+                    'order_type': o_trade.order_type,
+                    'current_step': o_trade.current_step,
+                    'side': o_trade.side,
+                    'price': o_trade.price,
+                    'size': o_trade.size,
+                    'cost': o_trade.cost,
+                    'from_position': o_trade.from_position,
+                    'profit': o_trade.profit,
+                    'return_rate': o_trade.return_rate
+                })
+                csvWriter.writerow({
+                    'ticker': c_trade.ticker,
+                    'order_id': c_trade.order_id,
+                    'order_type': c_trade.order_type,
+                    'current_step': c_trade.current_step,
+                    'side': c_trade.side,
+                    'price': c_trade.price,
+                    'size': c_trade.size,
+                    'cost': c_trade.cost,
+                    'from_position': c_trade.from_position,
+                    'profit': c_trade.profit,
+                    'return_rate': c_trade.return_rate
+                })
 
         # show trading record
-        plt.figure(figsize=(12, 6))
-
-        close_price = self.original_data['close']
-        plt.plot(close_price, label='close price')
 
         marker_dict = {
             'open': {
@@ -328,32 +333,8 @@ class TradingEnvironment:
                 'short': {'marker': 'v', 'color': 'c'}
             }
         }
-
-        for o_trade, c_trade in self.history_positions:
-            plt.plot(
-                close_price, 
-                marker_dict[o_trade.order_type][o_trade.side]['marker'], 
-                markersize=10, 
-                color=marker_dict[o_trade.order_type][o_trade.side]['color'],
-                markevery=o_trade.current_step
-            )
-            plt.plot(
-                close_price, 
-                marker_dict[c_trade.order_type][c_trade.side]['marker'], 
-                markersize=10, 
-                color=marker_dict[c_trade.order_type][c_trade.side]['color'],
-                markevery=c_trade.current_step
-            )
-
-
-        plt.title(f"{self.ticker} trading record")
-        plt.xlabel('Time')
-        plt.ylabel('Stock Price')
-        plt.legend()
-        plt.show()
-
+        close_price = self.original_data['close']
         plt.figure(figsize=(12, 6))
-
         plt.plot(close_price, label='close price')
 
         for o_trade, c_trade in self.history_positions:
@@ -377,7 +358,12 @@ class TradingEnvironment:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.show()
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_record.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=1
+        )
+        #plt.show()
 
         # show trading profits
         plt.figure(figsize=(12, 6))
@@ -386,7 +372,12 @@ class TradingEnvironment:
         plt.xlabel('Time')
         plt.ylabel('Profits')
         plt.legend()
-        plt.show()
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_profits.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=1
+        )
+        #plt.show()
 
         win_rate = len(self.positive_trading_profits) / len(self.trading_profits)
         avg_positive = np.mean(self.positive_trading_profits)
@@ -410,18 +401,28 @@ class TradingEnvironment:
         print(f"mar: {mar}")
         print(f"sqn: {sqn}")
 
-        with open('trading.txt', 'w') as f:
-            f.write(f"{self.ticker} trading record\n")
-            f.write(f"initial_balance: {self.initial_balance}\n")
-            f.write(f"total profits: {self.total_profits}\n")
-            f.write(f"win rate: {win_rate}\n")
-            f.write(f"avg positive profits: {avg_positive}\n")
-            f.write(f"avg negative profits: {avg_negative}\n")
-            f.write(f"odds: {odds}\n")
-            f.write(f"expected value: {expected_value}\n")
-            f.write(f"mdd: {mdd}\n")
-            f.write(f"mar: {mar}\n")
-            f.write(f"sqn: {sqn}\n")
+        with open('./results.csv', 'a+') as f:
+            field = ['ticker','initial_balance','total_profits','win_rate','avg_positive','avg_negative','odds','expected_value','mdd','mar','sqn']
+            csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
+            f.seek(0) #將檔案指標移回檔案開頭
+            try:
+                if not csv.Sniffer().has_header(f.read(1024)):
+                    csvWriter.writeheader() #寫入標題
+            except:
+                    csvWriter.writeheader()
+            csvWriter.writerow({
+                'ticker': self.ticker,
+                'initial_balance': self.initial_balance,
+                'total_profits': self.total_profits,
+                'win_rate': win_rate,
+                'avg_positive': avg_positive,
+                'avg_negative': avg_negative,
+                'odds': odds,
+                'expected_value': expected_value,
+                'mdd': mdd,
+                'mar': mar,
+                'sqn': sqn
+            })
 
 
         # show trading returns

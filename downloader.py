@@ -281,17 +281,17 @@ def output_data(data: pd.DataFrame, data_type: str, output_path: str):
 
 if __name__ == '__main__':
     save = True
-    output_path = './test'
+    ticker = '2317'
+    output_path = f'./datas/{ticker}'
 
     data = downloader(
         'tw', 
-        '2330',
-        '1m',
+        ticker,
+        '1d',
         datetime(2024, 1, 1),
         datetime(2024, 1, 20),
         save= True,
         output_path=output_path,
-        sj_api_path='./api.txt'
     )
 
     # data = downloader(

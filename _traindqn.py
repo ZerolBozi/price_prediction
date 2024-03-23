@@ -18,7 +18,7 @@ def main():
         original_data=original_data,
         predict_data=predict_data,
         model_params={
-            'trading_strategy': daytrading_strategy,
+            'trading_strategy': trend_strategy,
             'window_size': 30
         },
         should_save_model=True,

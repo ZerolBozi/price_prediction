@@ -386,7 +386,7 @@ class TradingEnvironment:
         # expected_value = win_rate * odds - (1 - win_rate)
         expected_value = Decimal(win_rate) * (1 + odds) - 1
         mdd = np.min(self.trading_profits)
-        mar = np.mean(self.trading_profits) / mdd
+        mar = np.sum(self.trading_profits) / mdd
         sqn = np.mean(self.trading_profits) / np.std(self.trading_profits) * np.sqrt(len(self.trading_profits))
 
         print(f"{self.ticker} trading record")

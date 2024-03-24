@@ -7,7 +7,7 @@ from use_model import use_model
 from datetime import datetime
 from downloader import downloader
 
-def main(market:str,ticker:str):
+def main(market:str,ticker:str,model_type:str="LSTM"):
     output_path = f'./datas/{ticker}'
 
     data_downloader = downloader(
@@ -84,16 +84,17 @@ def main(market:str,ticker:str):
         original_data=original_data,
         model_params=model_params,
         should_save_model=True,
-        model_name=f"lstm_{ticker}",
+        model_name=f"{model_type.lower()}_{ticker}",
         checkpoint_name=checkpoint_name,
+        model_type=model_type,
         use_early_stopping=True
     )
 
     train_obj.run()
 
     original_data, predict_data = use_model(
-        f'{ticker}',
-        f'lstm_{ticker}',
+        ticker,
+        f'{model_type.lower()}_{ticker}',
         {
             'time_window_size': 1,
             'real_cols': ['close'],
@@ -102,7 +103,7 @@ def main(market:str,ticker:str):
     )
 
     train_dqn = TrainDQN(
-        ticker=f'{ticker}',
+        ticker=ticker,
         original_data=original_data,
         predict_data=predict_data,
         model_params={

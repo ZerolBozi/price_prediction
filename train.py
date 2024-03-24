@@ -498,6 +498,7 @@ class Train:
             print(f"MSE ({column}):", mse)
             print(f"R^2 Score ({column}):", r2_score)
 
+        # plot real_close, predicted_close, predicted_high, predicted_low
         plt.figure(figsize=(12, 6))
 
         for column in common_columns:
@@ -512,7 +513,23 @@ class Train:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted.png',
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted_4lines.png',
+            transparent=True,
+            bbox_inches='tight',
+            pad_inches=1
+        )
+
+        # plot real_close, predicted_close
+        plt.figure(figsize=(12, 6))
+
+        plt.plot(real_data['close'], label=f'Real close Price')
+        plt.plot(predicted_data['close'], label=f'Predicted close Price', alpha=0.7)
+
+        plt.title(self.ticker)
+        plt.xlabel('Time')
+        plt.ylabel('Stock Price')
+        plt.legend()
+        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted_2lines.png',
             transparent=True,
             bbox_inches='tight',
             pad_inches=1

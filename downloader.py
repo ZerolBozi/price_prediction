@@ -94,15 +94,15 @@ def download(market_tpye: str, ticker: str, interval: str, start: datetime, end:
     :rtype: pd.DataFrame
     """
     # 檢查市場類型是否符合
-    if market_tpye not in ('tw', 'us', 'crypto'):
-        raise ValueError('market_tpye must be one of tw, us, crypto')
+    if market_tpye not in ('tw', 'us', 'crypto','weighted_index'):
+        raise ValueError('market_tpye must be one of tw, us, crypto, weighted_index')
     
     # 檢查資料間隔是否符合
     if interval not in ('1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w'):
         raise ValueError('interval must be one of 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w')
     
     # 使用yfinance下載資料, 僅限1d, 1w
-    if (market_tpye == 'tw' or market_tpye == 'us') and (interval in ['1d', '1w']):
+    if (market_tpye == 'tw' or market_tpye == 'us' or market_tpye == 'weighted_index') and (interval in ['1d', '1w']):
         return download_from_yfinance(ticker, interval, start, end)
     
     # 台股如果使用永豐API, 只有1m資料, 如果要其他interval, 需要自行組合kbars
@@ -281,11 +281,11 @@ def output_data(data: pd.DataFrame, data_type: str, output_path: str):
 
 if __name__ == '__main__':
     save = True
-    ticker = '2317'
+    ticker = '^TWII'
     output_path = f'./datas/{ticker}'
 
     data = downloader(
-        'tw', 
+        'weighted_index', 
         ticker,
         '1d',
         datetime(2024, 1, 1),

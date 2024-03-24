@@ -100,6 +100,7 @@ def main(market:str,ticker:str,model_type:str="LSTM"):
             'real_cols': ['close'],
             'target_cols': ['close', 'high', 'low']
         },
+        show_plot=False
     )
 
     train_dqn = TrainDQN(

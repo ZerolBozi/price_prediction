@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
+import os
 
 class Action:
     space = 5
@@ -82,7 +83,7 @@ class TradingEnvironment:
         self.position_size_ratio = position_size_ratio
         self.window_size = window_size
         self.action_size = action_size
-
+        self.chart_path = f'./chart/{self.ticker}'
         # 交易策略function
         self.trading_strategy = trading_strategy
 
@@ -322,6 +323,8 @@ class TradingEnvironment:
                 })
 
         # show trading record
+        if not os.path.isdir(self.chart_path):
+            os.makedirs(self.chart_path)
 
         marker_dict = {
             'open': {
@@ -358,11 +361,12 @@ class TradingEnvironment:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_record.png',
-            transparent=True,
+        plt.savefig(f'{self.chart_path}/{self.model_type}_{self.ticker}_record.png',
+            transparent=False,
             bbox_inches='tight',
             pad_inches=1
         )
+        plt.close()
         #plt.show()
 
         # show trading profits
@@ -372,11 +376,12 @@ class TradingEnvironment:
         plt.xlabel('Time')
         plt.ylabel('Profits')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_profits.png',
-            transparent=True,
+        plt.savefig(f'{self.chart_path}/{self.model_type}_{self.ticker}_profits.png',
+            transparent=False,
             bbox_inches='tight',
             pad_inches=1
         )
+        plt.close()
         #plt.show()
 
         win_rate = len(self.positive_trading_profits) / len(self.trading_profits)

@@ -310,6 +310,7 @@ class Train:
         self.checkpoint_path = checkpoint_path
         self.model_name = model_name
         self.checkpoint_name = checkpoint_name
+        self.chart_path = f'./chart/{self.ticker}'
 
         # input_size = next(iter(self.train_loader))[0].size(2)
 
@@ -469,14 +470,18 @@ class Train:
         return outputs.cpu().numpy(), val_loss
 
     def show_evaluate(self):
+        if not os.path.isdir(self.chart_path):
+            os.makedirs(self.chart_path)
+        plt.title(self.ticker)
         plt.plot(self.train_losses, label='Train Loss')
         plt.plot(self.val_losses, label='Validation Loss')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_loss.png',
-            transparent=True,
+        plt.savefig(f'{self.chart_path}/{self.model_type}_{self.ticker}_loss.png',
+            transparent=False,
             bbox_inches='tight',
             pad_inches=1
         )
+        plt.close()
         #plt.show()
 
         self.calc_metrics()
@@ -513,11 +518,13 @@ class Train:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted_4lines.png',
-            transparent=True,
+        plt.savefig(f'{self.chart_path}/{self.model_type}_{self.ticker}_predicted_4lines.png',
+            transparent=False,
             bbox_inches='tight',
             pad_inches=1
         )
+        plt.close()
+        #plt.show()
 
         # plot real_close, predicted_close
         plt.figure(figsize=(12, 6))
@@ -529,11 +536,12 @@ class Train:
         plt.xlabel('Time')
         plt.ylabel('Stock Price')
         plt.legend()
-        plt.savefig(f'./chart/{self.ticker}/{self.model_type}_{self.ticker}_predicted_2lines.png',
-            transparent=True,
+        plt.savefig(f'{self.chart_path}/{self.model_type}_{self.ticker}_predicted_2lines.png',
+            transparent=False,
             bbox_inches='tight',
             pad_inches=1
         )
+        plt.close()
         #plt.show()
 
     def save_model(self, epoch: int, val_loss:float):

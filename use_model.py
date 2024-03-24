@@ -21,7 +21,7 @@ def get_parser():
     parser.add_argument("--output_path", type=str, help="output path", default=None)
     return parser
 
-def use_model(ticker: str, model_name: str, model_params: dict, data_path: str = None, save_csv: bool = False, output_path: str = None):
+def use_model(ticker: str, model_name: str, model_params: dict, data_path: str = None, save_csv: bool = False, output_path: str = None,show_plot:bool=True):
     """
     model_params: dict
         :key 'time_window_size', type: int
@@ -58,8 +58,8 @@ def use_model(ticker: str, model_name: str, model_params: dict, data_path: str =
 
     if (save_csv) and (output_path is not None):
         predicted_data.to_csv(output_path + '.csv', index=False)
-
-    plot_results(ticker, real_data, predicted_data, model_params)
+    if show_plot:
+        plot_results(ticker, real_data, predicted_data, model_params)
     return real_data, predicted_data
 
 def plot_results(ticker: str, real_data: pd.DataFrame, predicted_data: pd.DataFrame, model_params: dict):

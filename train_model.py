@@ -122,6 +122,7 @@ if __name__ == "__main__":
     markets={
         "tw":["2317","2330","2308","2454","2603","2356"],
         "us":["AAPL","GOOGL","AMZN","MSFT","TSLA","NVDA"],
+        "weighted_index":["^TWII"],
         #"crypto":["BTC","ETH","BNB","SOL","OKB","XRP"]
     }
     for market in markets:

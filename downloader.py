@@ -69,10 +69,10 @@ def downloader(
 
 def download(market_tpye: str, ticker: str, interval: str, start: datetime, end: datetime, crypto_api_path: str = None, sj_api_path: str = None):
     """
-    :param market_tpye: 市場類型, (tw, us, crypto)
+    :param market_tpye: 市場類型, (tw, us, crypto, weighted_index)
     :type market_tpye: str
 
-    :param ticker: 商品名稱, (AAPL.US, 2330, BTCUSDT)
+    :param ticker: 商品名稱, (AAPL.US, 2330, BTCUSDT, ^TWII)
     :type ticker: str
 
     :param interval: 資料間隔, (1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w)

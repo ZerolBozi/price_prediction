@@ -210,7 +210,7 @@ def download_from_binance(ticker: str, interval: str, start: datetime, end: date
             break
 
         df = pd.DataFrame(data,columns=['unix','open','high','low','close','volume'])
-        df['datetime'] = pd.to_datetime(df['unix'],unit='ms') + pd.Timedelta(hours=8)
+        df['datetime'] = pd.to_datetime(df['unix'],unit='ms') + pd.TimedeltaIndex(hours=8)
         df = df.reindex(columns = ['datetime','unix','open','high','low','close', 'volume'])
 
         df_all_data = pd.concat([df_all_data, df], ignore_index=True)

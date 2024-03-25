@@ -289,10 +289,11 @@ class TradingEnvironment:
     def render(self):
         with open('./records.csv', 'a+',newline='') as f:
             field = ['ticker','order_id','order_type','current_step','side','price','size','cost','from_position','profit','return_rate']
+            f.seek(0)
             csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
-            f.seek(0) #將檔案指標移回檔案開頭
+            csvReader = list(csv.reader(f))
             try:
-                if not csv.Sniffer().has_header(f.read(1024)):
+                if csvReader[0] != field:
                     csvWriter.writeheader() #寫入標題
             except:
                     csvWriter.writeheader()
@@ -410,10 +411,11 @@ class TradingEnvironment:
 
         with open('./results.csv', 'a+',newline='') as f:
             field = ['ticker','initial_balance','total_profits','win_rate','avg_positive','avg_negative','odds','expected_value','mdd','mar','sqn']
+            f.seek(0)
             csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
-            f.seek(0) #將檔案指標移回檔案開頭
+            csvReader = list(csv.reader(f))
             try:
-                if not csv.Sniffer().has_header(f.read(1024)):
+                if csvReader[0] != field:
                     csvWriter.writeheader() #寫入標題
             except:
                     csvWriter.writeheader()

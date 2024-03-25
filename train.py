@@ -118,7 +118,8 @@ class TrainDQN:
             position_size_ratio=self.model_params.get('position_size_ratio', Decimal(0.5)),
             window_size=self.model_params.get('window_size', 1),
             action_size=Action.space,
-            trading_strategy=self.model_params.get('trading_strategy')
+            trading_strategy=self.model_params.get('trading_strategy'),
+            model_type=self.model_type
         )
 
         model_dict = {

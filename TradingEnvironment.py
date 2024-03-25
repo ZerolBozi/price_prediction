@@ -74,7 +74,8 @@ class TradingEnvironment:
             position_size_ratio: Decimal,
             window_size: int,
             action_size: int,
-            trading_strategy: callable
+            trading_strategy: callable,
+            model_type: str='DQN'
         ):
         self.ticker = ticker
         self.original_data = original_data
@@ -86,6 +87,7 @@ class TradingEnvironment:
         self.chart_path = f'./chart/{self.ticker}'
         # 交易策略function
         self.trading_strategy = trading_strategy
+        self.model_type = model_type
 
         self.reset()
     
@@ -147,7 +149,7 @@ class TradingEnvironment:
         price = Decimal(self.original_data['close'].iloc[self.current_step])
         free_balance = self.balance * self.position_size_ratio
         size = free_balance // price
-        reward = 0.0
+        reward = -1.0
 
         if (
             (action == Action.long) and 
@@ -285,7 +287,7 @@ class TradingEnvironment:
         return c_trade_info.order_id, profit
 
     def render(self):
-        with open('./records.csv', 'a+') as f:
+        with open('./records.csv', 'a+',newline='') as f:
             field = ['ticker','order_id','order_type','current_step','side','price','size','cost','from_position','profit','return_rate']
             csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
             f.seek(0) #將檔案指標移回檔案開頭
@@ -406,7 +408,7 @@ class TradingEnvironment:
         print(f"mar: {mar}")
         print(f"sqn: {sqn}")
 
-        with open('./results.csv', 'a+') as f:
+        with open('./results.csv', 'a+',newline='') as f:
             field = ['ticker','initial_balance','total_profits','win_rate','avg_positive','avg_negative','odds','expected_value','mdd','mar','sqn']
             csvWriter = csv.DictWriter(f, fieldnames = field) #建立Writer物件
             f.seek(0) #將檔案指標移回檔案開頭

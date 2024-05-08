@@ -1,0 +1,22 @@
+name: price_prediction
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pytorch
+  - torchvision
+  - pytorch-cuda=11.8
+  - pip
+  - pip:
+    - pandas
+    - pyarrow
+    - numpy
+    - scikit-learn
+    - matplotlib
+    - yfinance
+    - ccxt
+    - shioaji
+    - shioaji[speed]

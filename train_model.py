@@ -160,9 +160,10 @@ def main(
             model_name=dqn_model_name,
             model_params={
                 'window_size': time_window_size,
-                'trading_strategy': strategy_func,
+                'trading_strategy': regression_strategy,
                 'position_size_ratio': Decimal(0.5),
-                'model_type': dqn_model_type
+                'model_type': dqn_model_type,
+                'trade_side': trade_side
             },
             data={
                 'original_data': original_data,
@@ -187,6 +188,6 @@ if __name__ == "__main__":
     # change strategy
     strategy_func = regression_strategy
     
-    ticker = "JPM.US"
+    ticker = "BNBUSDT_NOW"
     # for ticker in tickers:
-    main(ticker, predict_model_type="BiGRU", trade_side=trade_side, strategy_func=strategy_func)
+    main(ticker, predict_model_type="BiGRU",predict_model_name='bigru_BNBUSDT',predict_train=False,dqn_train=False,dqn_model_name='dqn_BNBUSDT',trade_side=trade_side, strategy_func=strategy_func)

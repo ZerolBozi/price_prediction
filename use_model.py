@@ -78,6 +78,7 @@ def use_DQNmodel(ticker: str, model_name: str=None, model_params: dict=None, dat
         :key 'position_size_ratio', type: Decimal
         :key 'initial_balance', type: Decimal
         :key 'model_type', type: str
+        :key 'trade_side', type: list
 
     data: dict
         :key 'original_data', type: pd.DataFrame
@@ -106,10 +107,11 @@ def use_DQNmodel(ticker: str, model_name: str=None, model_params: dict=None, dat
         predict_data=predict_data,
         initial_balance=model_params.get('initial_balance', Decimal(100000)),
         position_size_ratio=model_params.get('position_size_ratio', Decimal(0.5)),
-        window_size=model_params.get('window_size', 1),
+        window_size=model_params.get('window_size', 25),
         action_size=Action.space,
         trading_strategy=model_params.get('trading_strategy',trend_strategy),
-        model_type=model_params.get('model_type', 'DQN')
+        model_type=model_params.get('model_type', 'DQN'),
+        trade_side=model_params.get('trade_side',[Action.long, Action.close_long])
     )
 
     done = False
